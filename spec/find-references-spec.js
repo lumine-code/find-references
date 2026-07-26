@@ -91,7 +91,7 @@ describe("find-references", () => {
   }
 
   describe("automatic highlighting", () => {
-    it("highlights references after the cursor rests and reports them via reference-marks", async () => {
+    it("highlights references after the cursor rests and reports them via find-references.markers", async () => {
       const findReferences = jasmine
         .createSpy("findReferences")
         .and.callFake(async () => makeResult());

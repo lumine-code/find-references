@@ -11,7 +11,7 @@ References come from provider packages â€” typically language-server backends â€
 - **Live results**: the panel tracks its position through edits and refreshes whenever a referenced buffer changes.
 - **Panel reuse**: a new lookup reuses the previous panel unless its results are pinned.
 - **Noise guard**: skips highlighting when a provider reports an outsized share of the buffer lines, e.g. for a mundane token.
-- **Scrollbar markers**: reports the highlighted occurrences through the reference-marks service, so the companion scrollmap-references package can mark them on the scrollbar.
+- **Scrollbar markers**: reports the highlighted occurrences through the find-references.markers service, so the companion scrollmap-references package can mark them on the scrollbar.
 
 ## Installation
 

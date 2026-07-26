@@ -9,7 +9,7 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 // TypeScript/Less -> plain CommonJS/CSS modernization. The command prefix,
 // config namespace, and package name all move to `find-references`; the custom
 // canvas scrollbar overlay is dropped in favor of the scrollmap-references
-// layer package, fed through the new `reference-marks` service.
+// layer package, fed through the `find-references.markers` service.
 describe("find-references package assets", () => {
   it("ships plain CommonJS with no build step or TypeScript leftovers", () => {
     expect(exists("lib/main.js")).toBe(true);
@@ -60,7 +60,7 @@ describe("find-references package assets", () => {
     expect(pkg.devDependencies.typescript).toBeUndefined();
   });
 
-  it("consumes find-references and provides reference-marks", () => {
+  it("consumes find-references.provider and provides find-references.markers", () => {
     const pkg = JSON.parse(read("package.json"));
     expect(pkg.consumedServices["find-references.provider"].versions["^1.0.0"]).toBe(
       "consumeFindReferences",
