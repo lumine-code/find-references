@@ -96,7 +96,7 @@ describe("find-references", () => {
         .createSpy("findReferences")
         .and.callFake(async () => makeResult());
       addProvider(findReferences);
-      const marks = mainModule.provideReferenceMarks();
+      const marks = mainModule.provideFindReferencesMarkers();
       const changed = jasmine.createSpy("changed");
       disposables.add(marks.onDidChangeMarkers(changed));
 
@@ -145,7 +145,7 @@ describe("find-references", () => {
     it("highlights on command even when autoHighlight is disabled", async () => {
       atom.config.set("find-references.autoHighlight", false);
       addProvider(async () => makeResult());
-      const marks = mainModule.provideReferenceMarks();
+      const marks = mainModule.provideFindReferencesMarkers();
 
       editor.setCursorBufferPosition([1, 2]);
       advanceClock(delay + 1);
@@ -162,7 +162,7 @@ describe("find-references", () => {
     it("does nothing when the provider resolves null", async () => {
       const findReferences = jasmine.createSpy("findReferences").and.resolveTo(null);
       addProvider(findReferences);
-      const marks = mainModule.provideReferenceMarks();
+      const marks = mainModule.provideFindReferencesMarkers();
 
       editor.setCursorBufferPosition([0, 2]);
       advanceClock(delay);

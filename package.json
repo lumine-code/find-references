@@ -27,17 +27,17 @@
     "format:check": "prettier --check ."
   },
   "consumedServices": {
-    "find-references": {
+    "find-references.provider": {
       "versions": {
         "^1.0.0": "consumeFindReferences"
       }
     }
   },
   "providedServices": {
-    "reference-marks": {
+    "find-references.markers": {
       "description": "Reports the reference occurrence markers currently highlighted in each editor.",
       "versions": {
-        "1.0.0": "provideReferenceMarks"
+        "1.0.0": "provideFindReferencesMarkers"
       }
     }
   },

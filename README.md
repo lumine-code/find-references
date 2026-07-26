@@ -36,8 +36,8 @@ atom-text-editor .highlight.find-references-reference .region {
 
 ## Services
 
-- **find-references** (`^1.0.0`): consumed to request the references to a symbol from providers such as IDE backend packages.
-- **reference-marks** (`1.0.0`): provided to report the reference occurrence markers currently highlighted in each editor, e.g. to the scrollmap-references layer.
+- **find-references.provider** (`^1.0.0`): consumed to request the references to a symbol from providers such as IDE backend packages.
+- **find-references.markers** (`1.0.0`): provided to report the reference occurrence markers currently highlighted in each editor, e.g. to the scrollmap-references layer.
 
 ## Contributing
 

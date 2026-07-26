@@ -62,10 +62,12 @@ describe("find-references package assets", () => {
 
   it("consumes find-references and provides reference-marks", () => {
     const pkg = JSON.parse(read("package.json"));
-    expect(pkg.consumedServices["find-references"].versions["^1.0.0"]).toBe(
+    expect(pkg.consumedServices["find-references.provider"].versions["^1.0.0"]).toBe(
       "consumeFindReferences",
     );
-    expect(pkg.providedServices["reference-marks"].versions["1.0.0"]).toBe("provideReferenceMarks");
+    expect(pkg.providedServices["find-references.markers"].versions["1.0.0"]).toBe(
+      "provideFindReferencesMarkers",
+    );
     // The experimental upstream show-references service is dropped.
     expect(pkg.providedServices["show-references"]).toBeUndefined();
   });
