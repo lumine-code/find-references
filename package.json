@@ -1,0 +1,96 @@
+{
+  "name": "find-references",
+  "author": "lumine-code",
+  "description": "Highlight and list references to the symbol under the cursor.",
+  "repository": "https://github.com/lumine-code/find-references",
+  "bugs": {
+    "url": "https://github.com/lumine-code/find-references/issues"
+  },
+  "keywords": [
+    "usages",
+    "occurrences",
+    "call-sites",
+    "symbol",
+    "highlight",
+    "lsp"
+  ],
+  "version": "1.0.0",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.100.0 <2.0.0"
+  },
+  "main": "./lib/main",
+  "scripts": {
+    "test": "cd ../lumine && npm run test:only -- ../find-references/spec",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "consumedServices": {
+    "find-references": {
+      "versions": {
+        "^1.0.0": "consumeFindReferences"
+      }
+    }
+  },
+  "providedServices": {
+    "reference-marks": {
+      "description": "Reports the reference occurrence markers currently highlighted in each editor.",
+      "versions": {
+        "1.0.0": "provideReferenceMarks"
+      }
+    }
+  },
+  "dependencies": {
+    "@lumine-code/etch": "https://github.com/lumine-code/etch.git#ace74599f9d6b54e9eb24ecb1e2407e9c35fcc74",
+    "minimatch": "^10.2.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-n": "^18.2.2",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.6"
+  },
+  "configSchema": {
+    "autoHighlight": {
+      "title": "Auto Highlight",
+      "description": "Highlight references to the symbol under the cursor automatically whenever the cursor rests. When disabled, references are highlighted only via the `find-references:highlight` command.",
+      "type": "boolean",
+      "default": true
+    },
+    "delay": {
+      "title": "Delay",
+      "description": "How long, in milliseconds, the cursor must rest before references are requested.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 400
+    },
+    "skipCurrentReference": {
+      "title": "Skip Current Reference",
+      "description": "Do not highlight the reference currently under the cursor.",
+      "type": "boolean",
+      "default": true
+    },
+    "ignoreThreshold": {
+      "title": "Ignore Threshold",
+      "description": "Skip highlighting when the ratio of references to buffer lines exceeds this value, e.g. when the cursor lands on a mundane token like `true`. Zero disables the limit.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0
+    },
+    "splitDirection": {
+      "title": "Split Direction",
+      "description": "Direction to split the active pane when the results panel opens. With `none` the panel opens in the active pane.",
+      "type": "string",
+      "enum": [
+        "none",
+        "right",
+        "down"
+      ],
+      "default": "none"
+    }
+  }
+}

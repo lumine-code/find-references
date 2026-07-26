@@ -1,0 +1,80 @@
+/* Occurrence highlight painted behind every reference to the symbol under the
+   cursor. A mostly-transparent wash of the plain-text color adapts to any
+   syntax theme. */
+atom-text-editor .highlight.find-references-reference .region {
+  background-color: color-mix(in srgb, var(--syntax-text-color) 18%, transparent);
+}
+
+/* The dockable results panel, modeled on the find-and-replace preview pane. */
+.find-references-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  overflow-x: auto;
+  -webkit-user-select: none;
+}
+
+.find-references-pane .preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--component-padding) / 2);
+  overflow: hidden;
+  font-weight: normal;
+  border-bottom: 1px solid var(--panel-heading-border-color);
+  background-color: var(--panel-heading-background-color);
+}
+
+.find-references-pane .preview-count {
+  margin: calc(var(--component-padding) / 2);
+}
+
+.find-references-pane .results-view {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  padding-bottom: var(--component-padding);
+}
+
+.find-references-pane .results-view .list-item {
+  padding-left: var(--component-padding);
+}
+
+.find-references-pane .results-view .match-row {
+  margin-left: 8px;
+  box-shadow: inset 0 1px 0
+    color-mix(in srgb, var(--base-border-color) 50%, var(--base-background-color));
+}
+
+.find-references-pane .results-view .line-number {
+  display: inline-block;
+  margin-right: 1ex;
+  text-align: right;
+}
+
+.find-references-pane .results-view .path-match-number {
+  padding-left: var(--component-padding);
+  color: var(--text-color-subtle);
+}
+
+.find-references-pane .results-view .preview {
+  word-break: break-all;
+  white-space: pre;
+  color: var(--text-color-subtle);
+}
+
+.find-references-pane .results-view .match-row .preview {
+  color: var(--text-color-highlight);
+}
+
+.find-references-pane .results-view .match-row.selected .line-number,
+.find-references-pane .results-view .match-row.selected .preview {
+  color: var(--text-color-selected);
+}
+
+.find-references-pane .results-view .selected .highlight-info {
+  box-shadow: inset 0 0 1px color-mix(in srgb, var(--background-color-info) 50%, white);
+}
