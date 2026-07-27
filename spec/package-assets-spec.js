@@ -8,7 +8,7 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 // Guards for the pulsar-find-references -> find-references rebrand and the
 // TypeScript/Less -> plain CommonJS/CSS modernization. The command prefix,
 // config namespace, and package name all move to `find-references`; the custom
-// canvas scrollbar overlay is dropped in favor of the scrollmap-references
+// canvas scrollbar overlay is dropped in favor of the marker-references
 // layer package, fed through the `find-references.markers` service.
 describe("find-references package assets", () => {
   it("ships plain CommonJS with no build step or TypeScript leftovers", () => {
@@ -19,7 +19,7 @@ describe("find-references package assets", () => {
     expect(fs.readdirSync(path.join(root, "lib")).every((file) => file.endsWith(".js"))).toBe(true);
   });
 
-  it("drops the canvas scrollbar overlay in favor of scrollmap-references", () => {
+  it("drops the canvas scrollbar overlay in favor of marker-references", () => {
     expect(exists("lib/elements")).toBe(false);
     expect(exists("lib/scroll-gutter.js")).toBe(false);
     const pkg = JSON.parse(read("package.json"));
