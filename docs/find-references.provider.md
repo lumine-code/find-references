@@ -9,7 +9,7 @@ Lists every occurrence of the symbol at a position.
 | Consumed by | `consumeFindReferences(provider)` returning a `Disposable`          |
 | Owner       | [`find-references`](https://github.com/lumine-code/find-references) |
 
-A language server reaches this through an [`ide-client`](https://lumine-code.github.io/docs.html#services/ide-client) adapter. Implement it directly for a source that is not a language server.
+A language server reaches this through an `ide-client` adapter. Implement it directly for a source that is not a language server.
 
 ## Registration
 
