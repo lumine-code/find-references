@@ -11,15 +11,22 @@ module.exports = [
   js.configs.recommended,
   n.configs["flat/recommended-script"],
   {
+    // Flat config lints only .js/.mjs/.cjs by default, so .jsx must be named
+    // or the views drop out of `eslint .` without failing it.
+    files: ["**/*.js", "**/*.mjs", "**/*.cjs", "**/*.jsx"],
     settings: {
       // This runs inside the editor's bundled Node 24 runtime, so lint
       // syntax/builtins against that rather than the package's `engines`.
-      n: { version: ">=24.0.0" },
+      // tryExtensions lets extensionless requires resolve .jsx files.
+      n: {
+        version: ">=24.0.0",
+        tryExtensions: [".js", ".jsx", ".json", ".node", ".mjs", ".cjs"],
+      },
     },
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "commonjs",
-      // references-view.js authors its panel with etch's JSX pragma.
+      // references-view.jsx authors its panel in JSX.
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals: {
         ...globals.browser,

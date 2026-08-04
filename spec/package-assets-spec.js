@@ -16,7 +16,7 @@ describe("find-references package assets", () => {
     expect(exists("tsconfig.json")).toBe(false);
     expect(exists("dist")).toBe(false);
     expect(exists("typings")).toBe(false);
-    expect(fs.readdirSync(path.join(root, "lib")).every((file) => file.endsWith(".js"))).toBe(true);
+    expect(fs.readdirSync(path.join(root, "lib")).every((file) => /\.jsx?$/.test(file))).toBe(true);
   });
 
   it("drops the canvas scrollbar overlay in favor of marker-references", () => {
@@ -104,7 +104,7 @@ describe("find-references package assets", () => {
 
   it("has no leftover pulsar / atom-ide / dropped-dependency references in lib", () => {
     for (const file of fs.readdirSync(path.join(root, "lib"))) {
-      if (!file.endsWith(".js")) continue;
+      if (!/\.jsx?$/.test(file)) continue;
       const src = read(path.join("lib", file));
       expect(src.toLowerCase()).not.toContain("pulsar");
       expect(src).not.toContain("atom-ide");
