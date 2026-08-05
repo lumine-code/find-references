@@ -23,6 +23,12 @@
     "{% if keys['find-references:show-panel'] %}You can list every reference to the symbol under the cursor with {{ 'find-references:show-panel' | keystroke }}{% else %}You can list every reference to the symbol under the cursor, grouped by file.{% endif %}"
   ],
   "main": "./lib/main",
+  "files": [
+    "docs",
+    "lib",
+    "spec",
+    "styles"
+  ],
   "scripts": {
     "test": "lumine --test spec",
     "lint": "eslint . --max-warnings 0",
