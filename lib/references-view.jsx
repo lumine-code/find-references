@@ -1,3 +1,4 @@
+/** @jsx etch.dom */
 const { CompositeDisposable, Emitter, TextBuffer } = require("atom");
 const etch = require("@lumine-code/etch");
 const Path = require("path");

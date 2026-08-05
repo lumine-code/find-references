@@ -2,6 +2,7 @@ const js = require("@eslint/js");
 const n = require("eslint-plugin-n");
 const globals = require("globals");
 const prettier = require("eslint-config-prettier");
+const jsx = require("./eslint-jsx");
 
 // Modules provided by the Lumine/Electron runtime rather than this package's own
 // manifest, so they aren't resolvable by eslint-plugin-n.
@@ -34,7 +35,13 @@ module.exports = [
         atom: "readonly",
       },
     },
+    plugins: { jsx },
     rules: {
+      // Each file names its own JSX factory in a `/** @jsx ... */` pragma:
+      // `require-pragma` insists on it, and `jsx-uses` reads it from there
+      // rather than from a default that lives in another repository.
+      "jsx/require-pragma": "error",
+      "jsx/jsx-uses": "error",
       "no-unused-vars": ["error", { varsIgnorePattern: "^_", argsIgnorePattern: "^_" }],
       "n/no-missing-require": ["error", { allowModules: runtimeModules }],
       "n/no-unpublished-require": ["error", { allowModules: runtimeModules }],
