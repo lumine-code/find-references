@@ -26,9 +26,9 @@ Commands available in `atom-text-editor`:
 
 ## Customization
 
-The highlight can be adjusted in the `styles.less` file, e.g. change the occurrence color:
+The highlight can be adjusted in the `styles.css` file, e.g. change the occurrence color:
 
-```less
+```css
 atom-text-editor .highlight.find-references-reference .region {
   background-color: color-mix(in srgb, var(--text-color-info) 25%, transparent);
 }
