@@ -39,7 +39,9 @@ describe("find-references", () => {
     disposables.dispose();
     await atom.packages.deactivatePackage("find-references");
     for (const open of atom.workspace.getTextEditors()) open.destroy();
-    fs.rmSync(tempDir, { recursive: true, force: true });
+    // Retries because Windows keeps a directory non-empty until the last handle on a child
+    // closes, and `force` swallows only ENOENT.
+    fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   });
 
   // A provider following the `find-references` service contract (see
