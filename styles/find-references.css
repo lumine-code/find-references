@@ -1,7 +1,7 @@
 /* Occurrence highlight painted behind every reference to the symbol under the
    cursor. A mostly-transparent wash of the plain-text color adapts to any
    syntax theme. */
-atom-text-editor .highlight.find-references-reference .region {
+lumine-text-editor .highlight.find-references-reference .region {
   background-color: color-mix(in srgb, var(--syntax-text-color) 18%, transparent);
 }
 

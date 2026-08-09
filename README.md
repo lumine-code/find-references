@@ -19,7 +19,7 @@ To install `find-references` search for _find-references_ in the Install pane of
 
 ## Commands
 
-Commands available in `atom-text-editor`:
+Commands available in `lumine-text-editor`:
 
 - `find-references:highlight`: highlight references to the symbol under the cursor,
 - `find-references:show-panel`: list references to the symbol under the cursor in a results panel.
@@ -29,7 +29,7 @@ Commands available in `atom-text-editor`:
 The highlight can be adjusted in the `styles.css` file, e.g. change the occurrence color:
 
 ```css
-atom-text-editor .highlight.find-references-reference .region {
+lumine-text-editor .highlight.find-references-reference .region {
   background-color: color-mix(in srgb, var(--text-color-info) 25%, transparent);
 }
 ```

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { CompositeDisposable } = require("atom");
+const { CompositeDisposable } = require("lumine");
 const ReferencesView = require("../lib/references-view");
 
 const packageRoot = path.join(__dirname, "..");
@@ -16,29 +16,29 @@ describe("find-references", () => {
   let mainModule, editor, disposables, delay, tempDir, alphaPath, betaPath;
 
   beforeEach(async () => {
-    jasmine.attachToDOM(atom.views.getView(atom.workspace));
+    jasmine.attachToDOM(lumine.views.getView(lumine.workspace));
     disposables = new CompositeDisposable();
-    atom.notifications.clear();
+    lumine.notifications.clear();
 
     tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "find-references-")));
     alphaPath = path.join(tempDir, "alpha.js");
     betaPath = path.join(tempDir, "beta.js");
     fs.writeFileSync(alphaPath, "hello world\nplain line\nhello again\n");
     fs.writeFileSync(betaPath, "// beta\nuse hello here\n");
-    atom.project.setPaths([tempDir]);
+    lumine.project.setPaths([tempDir]);
 
-    const pack = await atom.packages.activatePackage(packageRoot);
+    const pack = await lumine.packages.activatePackage(packageRoot);
     mainModule = pack.mainModule;
-    delay = atom.config.get("find-references.delay");
+    delay = lumine.config.get("find-references.delay");
 
-    editor = await atom.workspace.open(alphaPath);
+    editor = await lumine.workspace.open(alphaPath);
     await microtasks();
   });
 
   afterEach(async () => {
     disposables.dispose();
-    await atom.packages.deactivatePackage("find-references");
-    for (const open of atom.workspace.getTextEditors()) open.destroy();
+    await lumine.packages.deactivatePackage("find-references");
+    for (const open of lumine.workspace.getTextEditors()) open.destroy();
     // Retries because Windows keeps a directory non-empty until the last handle on a child
     // closes, and `force` swallows only ENOENT.
     fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
@@ -145,7 +145,7 @@ describe("find-references", () => {
     });
 
     it("highlights on command even when autoHighlight is disabled", async () => {
-      atom.config.set("find-references.autoHighlight", false);
+      lumine.config.set("find-references.autoHighlight", false);
       addProvider(async () => makeResult());
       const marks = mainModule.provideFindReferencesMarkers();
 
@@ -154,7 +154,7 @@ describe("find-references", () => {
       await microtasks();
       expect(marks.getMarkersForEditor(editor)).toEqual([]);
 
-      atom.commands.dispatch(atom.views.getView(editor), "find-references:highlight");
+      lumine.commands.dispatch(lumine.views.getView(editor), "find-references:highlight");
       await microtasks();
       // The cursor sits inside no reference, so both in-file references get
       // markers.
@@ -171,7 +171,7 @@ describe("find-references", () => {
       await microtasks();
       expect(findReferences).toHaveBeenCalled();
       expect(marks.getMarkersForEditor(editor)).toEqual([]);
-      expect(atom.notifications.getNotifications().length).toBe(0);
+      expect(lumine.notifications.getNotifications().length).toBe(0);
     });
 
     it("shows one dismissable error notification when the provider rejects", async () => {
@@ -182,7 +182,7 @@ describe("find-references", () => {
       editor.setCursorBufferPosition([0, 2]);
       advanceClock(delay);
       await microtasks();
-      let notifications = atom.notifications.getNotifications();
+      let notifications = lumine.notifications.getNotifications();
       expect(notifications.length).toBe(1);
       expect(notifications[0].getType()).toBe("error");
       expect(notifications[0].isDismissable()).toBe(true);
@@ -192,14 +192,14 @@ describe("find-references", () => {
       editor.setCursorBufferPosition([2, 2]);
       advanceClock(delay);
       await microtasks();
-      expect(atom.notifications.getNotifications().length).toBe(1);
+      expect(lumine.notifications.getNotifications().length).toBe(1);
 
       // Once dismissed, the next failure may raise a fresh one.
       notifications[0].dismiss();
       editor.setCursorBufferPosition([0, 3]);
       advanceClock(delay);
       await microtasks();
-      expect(atom.notifications.getNotifications().length).toBe(2);
+      expect(lumine.notifications.getNotifications().length).toBe(2);
     });
   });
 
@@ -208,17 +208,17 @@ describe("find-references", () => {
       addProvider(async () => makeResult());
       // Keep every referenced buffer open so the panel previews render without
       // hitting the disk.
-      await atom.workspace.open(betaPath);
-      editor = await atom.workspace.open(alphaPath);
+      await lumine.workspace.open(betaPath);
+      editor = await lumine.workspace.open(alphaPath);
       await microtasks();
     });
 
     function getPanel() {
-      return atom.workspace.getPaneItems().find((item) => item instanceof ReferencesView);
+      return lumine.workspace.getPaneItems().find((item) => item instanceof ReferencesView);
     }
 
     async function showPanel() {
-      atom.commands.dispatch(atom.views.getView(editor), "find-references:show-panel");
+      lumine.commands.dispatch(lumine.views.getView(editor), "find-references:show-panel");
       await microtasks();
       return getPanel();
     }
@@ -245,7 +245,7 @@ describe("find-references", () => {
       const betaRow = rows.find((row) => row.dataset.filePath === betaPath);
       betaRow.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
       await microtasks();
-      const active = atom.workspace.getActiveTextEditor();
+      const active = lumine.workspace.getActiveTextEditor();
       expect(active.getPath()).toBe(betaPath);
       expect(
         active
@@ -263,12 +263,12 @@ describe("find-references", () => {
       const panel = await showPanel();
 
       // Down twice: past the first group header onto its first row.
-      atom.commands.dispatch(panel.element, "core:move-down");
-      atom.commands.dispatch(panel.element, "core:move-down");
-      atom.commands.dispatch(panel.element, "core:confirm");
+      lumine.commands.dispatch(panel.element, "core:move-down");
+      lumine.commands.dispatch(panel.element, "core:move-down");
+      lumine.commands.dispatch(panel.element, "core:confirm");
       await microtasks();
 
-      const active = atom.workspace.getActiveTextEditor();
+      const active = lumine.workspace.getActiveTextEditor();
       expect(active.getPath()).toBe(alphaPath);
       expect(
         active

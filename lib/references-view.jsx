@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Emitter, TextBuffer } = require("atom");
+const { CompositeDisposable, Emitter, TextBuffer } = require("lumine");
 const etch = require("@lumine-code/etch");
 const Path = require("path");
 const picomatch = require("picomatch");
@@ -11,8 +11,8 @@ function pluralize(count, singular, plural = `${singular}s`) {
 // The display path of a reference: relative to its project root, with the root
 // folder name prepended when the project has more than one root.
 function displayPath(filePath) {
-  const [projectPath, relativePath] = atom.project.relativizePath(filePath);
-  if (projectPath && atom.project.getPaths().length > 1) {
+  const [projectPath, relativePath] = lumine.project.relativizePath(filePath);
+  if (projectPath && lumine.project.getPaths().length > 1) {
     return Path.join(Path.basename(projectPath), relativePath);
   }
   return relativePath;
@@ -196,13 +196,13 @@ module.exports = class ReferencesView {
     // These observers run synchronously on subscribe, so they must precede the
     // first grouping and render.
     this.subscriptions.add(
-      atom.config.observe("core.ignoredNames", (ignoredNames) => {
+      lumine.config.observe("core.ignoredNames", (ignoredNames) => {
         this.ignoredNameMatchers = (ignoredNames ?? []).map((glob) => picomatch(glob));
       }),
-      atom.config.observe("find-references.splitDirection", (value) => {
+      lumine.config.observe("find-references.splitDirection", (value) => {
         this.splitDirection = value;
       }),
-      atom.config.observe("editor.fontFamily", (fontFamily) => {
+      lumine.config.observe("editor.fontFamily", (fontFamily) => {
         this.previewStyle = { fontFamily };
         if (this.element) etch.update(this);
       }),
@@ -217,7 +217,7 @@ module.exports = class ReferencesView {
     this.subscriptions.add(
       // The panel refreshes in real time: when a buffer of the result set
       // stops changing, the lookup repeats at the tracked position.
-      atom.workspace.observeTextEditors((editor) => {
+      lumine.workspace.observeTextEditors((editor) => {
         this.subscriptions.add(
           editor.onDidStopChanging(() => {
             const path = editor.getPath();
@@ -225,7 +225,7 @@ module.exports = class ReferencesView {
           }),
         );
       }),
-      atom.commands.add(this.element, {
+      lumine.commands.add(this.element, {
         "core:move-up": () => this.moveBy(-1),
         "core:move-down": () => this.moveBy(1),
         "core:move-left": () => this.collapseActive(true),
@@ -295,7 +295,7 @@ module.exports = class ReferencesView {
 
   close() {
     if (this.destroyed) return;
-    const pane = atom.workspace.paneForItem(this);
+    const pane = lumine.workspace.paneForItem(this);
     if (pane) {
       pane.destroyItem(this, true);
     } else {
@@ -326,7 +326,7 @@ module.exports = class ReferencesView {
   // Group the references by file, dropping everything outside the project or
   // inside ignored paths.
   filterAndGroupReferences() {
-    const projectPaths = atom.project.getPaths();
+    const projectPaths = lumine.project.getPaths();
     const groups = new Map();
     const paths = new Set();
     for (const reference of this.references) {
@@ -344,7 +344,7 @@ module.exports = class ReferencesView {
   }
 
   isPathIgnored(filePath) {
-    if (atom.repositories?.getForPath(filePath)?.isPathIgnored(filePath)) return true;
+    if (lumine.repositories?.getForPath(filePath)?.isPathIgnored(filePath)) return true;
     // Globs speak `/`, and picomatch does not normalize separators for us the
     // way minimatch did.
     const normalizedFilePath =
@@ -357,7 +357,7 @@ module.exports = class ReferencesView {
   // workspace before loading anything from disk.
   buildOpenBufferCache() {
     const cache = new Map();
-    for (const editor of atom.workspace.getTextEditors()) {
+    for (const editor of lumine.workspace.getTextEditors()) {
       const path = editor.getPath();
       if (path && !cache.has(path)) cache.set(path, editor.getBuffer());
     }
@@ -458,7 +458,7 @@ module.exports = class ReferencesView {
     if (!element || element.matches(".path-row")) return;
     const buffer = this.bufferCache.get(element.dataset.filePath);
     const text = buffer?.lineForRow(reference.range.start.row);
-    if (text) atom.clipboard.write(text);
+    if (text) lumine.clipboard.write(text);
   }
 
   handleClick(event) {
@@ -480,12 +480,12 @@ module.exports = class ReferencesView {
     const references = this.groupedReferences.get(filePath);
     if (!references) return;
     const reference = references.find((ref) => ref.range.toString() === rangeSpec) ?? references[0];
-    const editor = await atom.workspace.open(filePath, {
+    const editor = await lumine.workspace.open(filePath, {
       pending: true,
       searchAllPanes: true,
       split: getOppositeSplit(this.splitDirection),
     });
-    if (!atom.workspace.isTextEditor(editor)) return;
+    if (!lumine.workspace.isTextEditor(editor)) return;
     const { range } = reference;
     // Reveal the row of the result if it happens to be folded.
     editor.unfoldBufferRow(range.start.row);
