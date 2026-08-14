@@ -15,7 +15,7 @@ References come from provider packages â€” typically language-server backends â€
 
 ## Installation
 
-To install `find-references` search for _find-references_ in the Install pane of the Lumine settings or run `lumine --install lumine-code/find-references`.
+To install `find-references` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/find-references`.
 
 ## Commands
 
@@ -36,8 +36,8 @@ lumine-text-editor .highlight.find-references-reference .region {
 
 ## Services
 
-- **[find-references.provider](docs/find-references.provider.md)** (`^1.0.0`): consumed to request the references to a symbol from providers such as IDE backend packages.
-- **[find-references.markers](docs/find-references.markers.md)** (`1.0.0`): provided to report the reference occurrence markers currently highlighted in each editor, e.g. to the marker-references layer.
+- [`find-references.provider`](docs/find-references.provider.md): consumed to request the references to a symbol from providers such as IDE backend packages.
+- [`find-references.markers`](docs/find-references.markers.md): provided to report the reference occurrence markers currently highlighted in each editor, e.g. to the marker-references layer.
 
 ## Contributing
 
