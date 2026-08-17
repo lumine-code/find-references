@@ -8,8 +8,8 @@ const exists = (rel) => fs.existsSync(path.join(root, rel));
 // Guards for the pulsar-find-references -> find-references rebrand and the
 // TypeScript/Less -> plain CommonJS/CSS modernization. The command prefix,
 // config namespace, and package name all move to `find-references`; the custom
-// canvas scrollbar overlay is dropped in favor of the marker-references
-// layer package, fed through the `find-references.markers` service.
+// canvas scrollbar overlay is dropped in favor of the package's own
+// `marker.layer` provider, fed through the `find-references.markers` facade.
 describe("find-references package assets", () => {
   it("ships plain CommonJS with no build step or TypeScript leftovers", () => {
     expect(exists("lib/main.js")).toBe(true);
@@ -19,7 +19,7 @@ describe("find-references package assets", () => {
     expect(fs.readdirSync(path.join(root, "lib")).every((file) => /\.jsx?$/.test(file))).toBe(true);
   });
 
-  it("drops the canvas scrollbar overlay in favor of marker-references", () => {
+  it("drops the canvas scrollbar overlay in favor of the marker layer", () => {
     expect(exists("lib/elements")).toBe(false);
     expect(exists("lib/scroll-gutter.js")).toBe(false);
     const pkg = JSON.parse(read("package.json"));
@@ -33,6 +33,7 @@ describe("find-references package assets", () => {
 
   it("ships a CSS stylesheet built on custom properties, not Less", () => {
     expect(exists("styles/find-references.css")).toBe(true);
+    expect(exists("styles/marker-references.css")).toBe(true);
     expect(exists("styles/find-references.less")).toBe(false);
     expect(exists("styles/pulsar-find-references.less")).toBe(false);
     const css = read("styles/find-references.css");
@@ -61,7 +62,7 @@ describe("find-references package assets", () => {
     expect(pkg.devDependencies.typescript).toBeUndefined();
   });
 
-  it("consumes find-references.provider and provides find-references.markers", () => {
+  it("consumes find-references.provider and provides the markers and layer services", () => {
     const pkg = JSON.parse(read("package.json"));
     expect(pkg.consumedServices["find-references.provider"].versions["^1.0.0"]).toBe(
       "consumeFindReferences",
@@ -69,29 +70,36 @@ describe("find-references package assets", () => {
     expect(pkg.providedServices["find-references.markers"].versions["1.0.0"]).toBe(
       "provideFindReferencesMarkers",
     );
+    expect(pkg.providedServices["marker.layer"].versions["1.0.0"]).toBe("provideMarkerLayer");
     // The experimental upstream show-references service is dropped.
     expect(pkg.providedServices["show-references"]).toBeUndefined();
   });
 
-  it("defines a flat config schema under the find-references namespace without order keys", () => {
+  it("defines the config schema under the find-references namespace without order keys", () => {
     const pkg = JSON.parse(read("package.json"));
     const schema = pkg.configSchema;
     expect(Object.keys(schema).sort()).toEqual([
       "autoHighlight",
       "delay",
       "ignoreThreshold",
+      "marker",
       "skipCurrentReference",
       "splitDirection",
     ]);
-    for (const entry of Object.values(schema)) {
+    const checkEntry = (entry) => {
       expect(entry.order).toBeUndefined();
       expect(entry.title).toBeDefined();
       expect(entry.description).toBeDefined();
       expect(entry.type).toBeDefined();
-      // `default` must be the last key of every entry.
-      const keys = Object.keys(entry);
-      expect(keys[keys.length - 1]).toBe("default");
-    }
+      if (entry.type === "object") {
+        for (const nested of Object.values(entry.properties)) checkEntry(nested);
+      } else {
+        // `default` must be the last key of every leaf entry.
+        const keys = Object.keys(entry);
+        expect(keys[keys.length - 1]).toBe("default");
+      }
+    };
+    for (const entry of Object.values(schema)) checkEntry(entry);
   });
 
   it("keeps the README description in sync with package.json", () => {

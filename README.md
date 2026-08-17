@@ -11,7 +11,7 @@ References come from provider packages â€” typically language-server backends â€
 - **Live results**: the panel tracks its position through edits and refreshes whenever a referenced buffer changes.
 - **Panel reuse**: a new lookup reuses the previous panel unless its results are pinned.
 - **Noise guard**: skips highlighting when a provider reports an outsized share of the buffer lines, e.g. for a mundane token.
-- **Scrollbar markers**: reports the highlighted occurrences through the find-references.markers service, so the companion marker-references package can mark them on the scrollbar and the minimap.
+- **Scrollbar markers**: shows the reference occurrences on the scrollbar and minimap via the marker hub.
 
 ## Installation
 
@@ -37,7 +37,8 @@ lumine-text-editor .highlight.find-references-reference .region {
 ## Services
 
 - [`find-references.provider`](docs/find-references.provider.md): consumed to request the references to a symbol from providers such as IDE backend packages.
-- [`find-references.markers`](docs/find-references.markers.md): provided to report the reference occurrence markers currently highlighted in each editor, e.g. to the marker-references layer.
+- [`find-references.markers`](docs/find-references.markers.md): provided to report the reference occurrence markers currently highlighted in each editor.
+- `marker.layer`: provided to draw the reference occurrences on the editor's overview maps (scrollbar, minimap).
 
 ## Contributing
 

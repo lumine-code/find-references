@@ -48,6 +48,11 @@
       "versions": {
         "1.0.0": "provideFindReferencesMarkers"
       }
+    },
+    "marker.layer": {
+      "versions": {
+        "1.0.0": "provideMarkerLayer"
+      }
     }
   },
   "dependencies": {
@@ -100,6 +105,26 @@
         "down"
       ],
       "default": "none"
+    },
+    "marker": {
+      "title": "Marker",
+      "description": "Settings of the references layer drawn on the scrollbar and minimap by the marker hub.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "title": "Enabled",
+          "description": "Show reference markers on the scrollbar and minimap.",
+          "type": "boolean",
+          "default": true
+        },
+        "threshold": {
+          "title": "Threshold",
+          "description": "Hide markers if count exceeds this value. Zero means no limit.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
     }
   }
 }

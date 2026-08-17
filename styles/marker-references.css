@@ -1,0 +1,7 @@
+.marker.marker-references {
+  /* Slot 20 of the cross-layer z-index band; 10-19 are claimed by the other
+     marker layers. */
+  z-index: 20;
+  background-color: var(--syntax-text-color);
+  opacity: 0.5;
+}
