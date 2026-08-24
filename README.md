@@ -30,7 +30,7 @@ The highlight can be adjusted in the `styles.css` file, e.g. change the occurren
 
 ```css
 lumine-text-editor .highlight.find-references-reference .region {
-  background-color: color-mix(in srgb, var(--text-color-info) 25%, transparent);
+  background-color: color-mix(in srgb, var(--accent-color) 25%, transparent);
 }
 ```
 
