@@ -2,7 +2,6 @@
 const { CompositeDisposable, Emitter, TextBuffer } = require("lumine");
 const etch = require("@lumine-code/etch");
 const Path = require("path");
-const picomatch = require("picomatch");
 
 function pluralize(count, singular, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
@@ -186,7 +185,7 @@ module.exports = class ReferencesView {
     this.collapsedIndices = new Set();
     this.indexToReferenceMap = new Map();
     this.previewStyle = { fontFamily: "" };
-    this.ignoredNameMatchers = [];
+    this.ignoredNames = null;
     this.splitDirection = "none";
     this.marker = null;
     this.markerSubscriptions = null;
@@ -196,8 +195,10 @@ module.exports = class ReferencesView {
     // These observers run synchronously on subscribe, so they must precede the
     // first grouping and render.
     this.subscriptions.add(
-      lumine.config.observe("core.ignoredNames", (ignoredNames) => {
-        this.ignoredNameMatchers = (ignoredNames ?? []).map((glob) => picomatch(glob));
+      lumine.config.observe("core.ignoredNames", () => {
+        this.ignoredNames = lumine.project.compileIgnoredNames();
+        if (!this.element) return;
+        this.update({ references: this.references.slice() });
       }),
       lumine.config.observe("find-references.splitDirection", (value) => {
         this.splitDirection = value;
@@ -344,12 +345,8 @@ module.exports = class ReferencesView {
   }
 
   isPathIgnored(filePath) {
-    if (lumine.repositories?.getForPath(filePath)?.isPathIgnored(filePath)) return true;
-    // Globs speak `/`, and picomatch does not normalize separators for us the
-    // way minimatch did.
-    const normalizedFilePath =
-      process.platform === "win32" ? filePath.replace(/\\/g, "/") : filePath;
-    return this.ignoredNameMatchers.some((isMatch) => isMatch(normalizedFilePath));
+    const [projectPath, relativePath] = lumine.project.relativizePath(filePath);
+    return Boolean(projectPath && relativePath && this.ignoredNames.matches(relativePath));
   }
 
   // Providers position references against the current project state, including

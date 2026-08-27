@@ -281,6 +281,27 @@ describe("find-references", () => {
       ).toBe(true);
     });
 
+    it("filters core ignored names and refreshes the open panel when they change", async () => {
+      jasmine.useRealClock();
+      const previous = lumine.config.get("core.ignoredNames");
+      try {
+        lumine.config.set("core.ignoredNames", ["beta.js"]);
+        editor.setCursorBufferPosition([0, 2]);
+        const panel = await showPanel();
+
+        expect(panel.element.querySelectorAll("li.list-nested-item").length).toBe(1);
+        expect(panel.element.querySelectorAll("li.match-row").length).toBe(2);
+
+        lumine.config.set("core.ignoredNames", []);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(panel.groupedReferences.size).toBe(2);
+        expect(panel.element.querySelectorAll("li.list-nested-item").length).toBe(2);
+        expect(panel.element.querySelectorAll("li.match-row").length).toBe(3);
+      } finally {
+        lumine.config.set("core.ignoredNames", previous);
+      }
+    });
+
     it("does not open a panel when the provider resolves null", async () => {
       disposables.dispose();
       disposables = new CompositeDisposable();

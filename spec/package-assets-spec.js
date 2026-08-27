@@ -53,7 +53,7 @@ describe("find-references package assets", () => {
     expect(pkg.bugs.url).toBe("https://github.com/lumine-code/find-references/issues");
     expect(pkg.main).toBe("./lib/main");
     expect(pkg.dependencies["@lumine-code/etch"]).toBeDefined();
-    expect(pkg.dependencies.picomatch).toBeDefined();
+    expect(pkg.dependencies.picomatch).toBeUndefined();
     expect(pkg.dependencies.minimatch).toBeUndefined();
     expect(pkg.dependencies.etch).toBeUndefined();
     expect(pkg.dependencies["fs-plus"]).toBeUndefined();
