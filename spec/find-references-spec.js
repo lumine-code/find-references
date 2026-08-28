@@ -2,6 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { CompositeDisposable } = require("lumine");
+const etch = require("@lumine-code/etch");
 const ReferencesView = require("../lib/references-view");
 
 const packageRoot = path.join(__dirname, "..");
@@ -293,7 +294,7 @@ describe("find-references", () => {
         expect(panel.element.querySelectorAll("li.match-row").length).toBe(2);
 
         lumine.config.set("core.ignoredNames", []);
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await etch.getScheduler().getNextUpdatePromise();
         expect(panel.groupedReferences.size).toBe(2);
         expect(panel.element.querySelectorAll("li.list-nested-item").length).toBe(2);
         expect(panel.element.querySelectorAll("li.match-row").length).toBe(3);
