@@ -282,6 +282,18 @@ describe("find-references", () => {
       ).toBe(true);
     });
 
+    it("brings a reusable results panel forward through the workspace", async () => {
+      editor.setCursorBufferPosition([0, 2]);
+      const panel = await showPanel();
+      const editorPane = lumine.workspace.paneForItem(editor);
+      editorPane.activateItem(editor);
+      editorPane.activate();
+      const open = spyOn(lumine.workspace, "open").and.callThrough();
+
+      expect(await showPanel()).toBe(panel);
+      expect(open).toHaveBeenCalledWith(panel);
+    });
+
     it("filters core ignored names and refreshes the open panel when they change", async () => {
       jasmine.useRealClock();
       const previous = lumine.config.get("core.ignoredNames");
