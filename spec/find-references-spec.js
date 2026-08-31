@@ -1,7 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { CompositeDisposable } = require("lumine");
+const { CompositeDisposable, Icon } = require("lumine");
 const etch = require("@lumine-code/etch");
 const ReferencesView = require("../lib/references-view");
 
@@ -236,6 +236,21 @@ describe("find-references", () => {
       expect(panel.element.querySelector(".preview-count").textContent).toContain(
         "3 results found in 2 files",
       );
+      expect(panel.element.querySelector(".reference-group-icon.icon-file-text")).toExist();
+      disposables.add(
+        lumine.icons.addProvider(
+          {
+            id: "find-references-spec",
+            handles: ["path"],
+            usesContext: true,
+            iconFor(target) {
+              return target.context === "find-references" ? Icon.classes(["icon-flame"]) : null;
+            },
+          },
+          { priority: 100 },
+        ),
+      );
+      expect(panel.element.querySelector(".reference-group-icon.icon-flame")).toExist();
 
       // Rows preview the buffer line with the matched segment highlighted.
       const alphaRow = rows.find((row) => row.dataset.filePath === alphaPath);

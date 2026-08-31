@@ -78,11 +78,32 @@ class ReferenceGroupView {
   constructor(props) {
     this.props = props;
     etch.initialize(this);
+    this.updateIcon();
   }
 
   update(props) {
     this.props = props;
-    return etch.update(this);
+    return etch.update(this).then(() => this.updateIcon());
+  }
+
+  destroy() {
+    this.iconDisposable?.dispose();
+    return etch.destroy(this);
+  }
+
+  updateIcon() {
+    this.iconDisposable?.dispose();
+    const icon = this.element?.querySelector(".reference-group-icon");
+    if (!icon) return;
+    this.iconDisposable = lumine.icons.applyTo(
+      icon,
+      {
+        path: this.props.filePath,
+        context: "find-references",
+        hints: { directory: false },
+      },
+      { setData: false },
+    );
   }
 
   render() {
@@ -106,7 +127,7 @@ class ReferenceGroupView {
           className="list-item path-row"
           dataset={{ navigationIndex: String(navigationIndex), filePath }}
         >
-          <span className="icon icon-file-text" />
+          <span className="reference-group-icon" />
           <span className="path-name bright">{displayPath(filePath)}</span>
           <span className="path-match-number">
             ({pluralize(references.length, "match", "matches")})
