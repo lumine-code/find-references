@@ -327,6 +327,11 @@ module.exports = class ReferencesView {
 
   // PANE ITEM PROTOCOL
 
+  // Deliberately no serialize(): this result is valid only while its provider,
+  // source editor, and tracked position marker are alive. "Keep results"
+  // prevents reuse during this session; it does not turn the result into a
+  // restorable snapshot.
+
   getTitle() {
     return `References: ${this.symbolName ?? "?"}`;
   }

@@ -229,6 +229,7 @@ describe("find-references", () => {
       const panel = await showPanel();
       expect(panel).toBeDefined();
       expect(panel.getTitle()).toContain("hello");
+      expect(panel.serialize).toBeUndefined();
 
       expect(panel.element.querySelectorAll("li.list-nested-item").length).toBe(2);
       const rows = Array.from(panel.element.querySelectorAll("li.match-row"));
