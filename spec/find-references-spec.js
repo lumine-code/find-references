@@ -3,7 +3,7 @@ const os = require("os");
 const path = require("path");
 const { CompositeDisposable, Icon } = require("lumine");
 const etch = require("@lumine-code/etch");
-const ReferencesView = require("../lib/references-view");
+let ReferencesView;
 
 const packageRoot = path.join(__dirname, "..");
 
@@ -30,6 +30,7 @@ describe("find-references", () => {
 
     const pack = await lumine.packages.activatePackage(packageRoot);
     mainModule = pack.mainModule;
+    ReferencesView = require("../lib/references-view");
     delay = lumine.config.get("find-references.delay");
 
     editor = await lumine.workspace.open(alphaPath);
@@ -43,6 +44,11 @@ describe("find-references", () => {
     // Retries because Windows keeps a directory non-empty until the last handle on a child
     // closes, and `force` swallows only ENOENT.
     fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+  });
+
+  it("registers file commands only on non-mini editors", () => {
+    const commands = lumine.commands.findCommands({ target: lumine.views.getView(editor) });
+    expect(commands.some(({ name }) => name === "find-references:highlight")).toBe(true);
   });
 
   // A provider following the `find-references` service contract (see
