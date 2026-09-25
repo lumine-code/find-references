@@ -19,9 +19,6 @@
   "engines": {
     "lumine": "^1.0.0"
   },
-  "backgroundTips": [
-    "{% if keys['find-references:show-panel'] %}You can list every reference to the symbol under the cursor with {{ 'find-references:show-panel' | keystroke }}{% else %}You can list every reference to the symbol under the cursor, grouped by file.{% endif %}"
-  ],
   "main": "./lib/main",
   "files": [
     "docs",
@@ -35,13 +32,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "consumedServices": {
-    "find-references.provider": {
-      "versions": {
-        "^1.0.0": "consumeFindReferences"
-      }
-    }
-  },
   "providedServices": {
     "find-references.markers": {
       "description": "Reports the reference occurrence markers currently highlighted in each editor.",
@@ -52,6 +42,18 @@
     "marker.layer": {
       "versions": {
         "1.0.0": "provideMarkerLayer"
+      }
+    },
+    "background-tips.provider": {
+      "versions": {
+        "1.0.0": "provideBackgroundTips"
+      }
+    }
+  },
+  "consumedServices": {
+    "find-references.provider": {
+      "versions": {
+        "^1.0.0": "consumeFindReferences"
       }
     }
   },
