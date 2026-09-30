@@ -1,8 +1,8 @@
 /* Occurrence highlight painted behind every reference to the symbol under the
-   cursor. A mostly-transparent wash of the plain-text color adapts to any
+   cursor. A faint wash of the plain-text color adapts to any
    syntax theme. */
 lumine-text-editor .highlight.find-references-reference .region {
-  background-color: color-mix(in srgb, var(--syntax-text-color) 18%, transparent);
+  background-color: color-mix(in srgb, var(--syntax-text-color) 8%, transparent);
 }
 
 /* The dockable results panel, modeled on the find-and-replace preview pane. */
