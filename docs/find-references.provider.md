@@ -78,9 +78,11 @@ Provider selection is **first-match by registration order**, not by priority: th
 
 `isEditorSupported` is asked before every lookup, so keep it cheap — a grammar-scope comparison rather than a project scan.
 
-Returning `null` means "nothing to show" and is quietly ignored. A **rejection** is different: it surfaces as a single dismissable error notification, so throw only when something genuinely went wrong.
+Returning `null` means no references are available and raises no notification. A **rejection** is different: it surfaces as a single dismissable error notification, so throw only when something genuinely went wrong.
 
 Results drive both the references panel and the inline highlight of occurrences in the visible editors, so the ranges should be tight around the identifier rather than around the whole statement.
+
+Automatic highlights stay visible during cursor movement until the latest lookup finishes. Only the result for the current cursor position is applied; a latest empty result or `null` clears the previous highlights. Identical ranges keep their existing markers. Editing the buffer, disabling automatic highlighting, or leaving the single-cursor text-editor context clears them immediately.
 
 The highlighted markers are separately republished as [`find-references.markers`](find-references.markers.md) for scrollbar overviews to read.
 

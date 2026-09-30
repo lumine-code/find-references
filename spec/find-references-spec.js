@@ -144,11 +144,328 @@ describe("find-references", () => {
       expect(decoration.getProperties().type).toBe("highlight");
       expect(decoration.getProperties().class).toBe("find-references-reference");
 
-      // Moving the cursor clears the highlight immediately.
+      // Existing markers remain until the next lookup replaces them.
       changed.calls.reset();
       editor.setCursorBufferPosition([1, 0]);
+      expect(marks.getMarkersForEditor(editor)).toEqual(markers);
+      expect(changed).not.toHaveBeenCalled();
+    });
+
+    function addDeferredProvider() {
+      const requests = [];
+      const findReferences = jasmine
+        .createSpy("findReferences")
+        .and.callFake(() => new Promise((resolve) => requests.push(resolve)));
+      addProvider(findReferences);
+      return { requests, findReferences };
+    }
+
+    it("keeps the same markers while moving within a symbol and awaiting the next result", async () => {
+      const { requests, findReferences } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+      const changed = jasmine.createSpy("changed");
+      disposables.add(marks.onDidChangeMarkers(changed));
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      const markers = marks.getMarkersForEditor(editor);
+      expect(markers.length).toBe(1);
+      changed.calls.reset();
+
+      lumine.commands.dispatch(lumine.views.getView(editor), "core:move-right");
+      expect(editor.getCursorBufferPosition().isEqual([0, 3])).toBe(true);
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+      expect(changed).not.toHaveBeenCalled();
+
+      advanceClock(delay - 1);
+      expect(findReferences.calls.count()).toBe(1);
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+
+      advanceClock(1);
+      expect(findReferences.calls.count()).toBe(2);
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+      expect(changed).not.toHaveBeenCalled();
+
+      requests[1](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+      expect(changed).not.toHaveBeenCalled();
+    });
+
+    it("ignores an old result while the next cursor position is still debouncing", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      const markers = marks.getMarkersForEditor(editor);
+
+      editor.setCursorBufferPosition([1, 0]);
+      advanceClock(delay);
+      editor.setCursorBufferPosition([1, 1]);
+      requests[1](null);
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+
+      advanceClock(delay);
+      requests[2]({
+        references: [
+          {
+            path: alphaPath,
+            range: [
+              [1, 6],
+              [1, 10],
+            ],
+          },
+        ],
+      });
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor).length).toBe(1);
+      expect(
+        marks
+          .getMarkersForEditor(editor)[0]
+          .getBufferRange()
+          .isEqual([
+            [1, 6],
+            [1, 10],
+          ]),
+      ).toBe(true);
+    });
+
+    it("does not replace a newer result with an older response", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      editor.setCursorBufferPosition([1, 0]);
+      advanceClock(delay);
+      requests[1]({
+        references: [
+          {
+            path: alphaPath,
+            range: [
+              [1, 6],
+              [1, 10],
+            ],
+          },
+        ],
+      });
+      await microtasks();
+      const markers = marks.getMarkersForEditor(editor);
+      expect(markers.length).toBe(1);
+
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)).toEqual(markers);
+      expect(
+        markers[0].getBufferRange().isEqual([
+          [1, 6],
+          [1, 10],
+        ]),
+      ).toBe(true);
+    });
+
+    for (const [name, result] of [
+      ["null", null],
+      ["empty", { references: [] }],
+    ]) {
+      it(`clears prior highlights in every editor when the latest result is ${name}`, async () => {
+        const betaEditor = await lumine.workspace.open(betaPath, { split: "right" });
+        lumine.workspace.paneForItem(editor).activate();
+        const { requests } = addDeferredProvider();
+        const marks = mainModule.provideFindReferencesMarkers();
+
+        editor.setCursorBufferPosition([0, 2]);
+        advanceClock(delay);
+        requests[0](makeResult());
+        await microtasks();
+        expect(marks.getMarkersForEditor(editor).length).toBe(1);
+        expect(marks.getMarkersForEditor(betaEditor).length).toBe(1);
+
+        editor.setCursorBufferPosition([1, 0]);
+        expect(marks.getMarkersForEditor(editor).length).toBe(1);
+        expect(marks.getMarkersForEditor(betaEditor).length).toBe(1);
+        advanceClock(delay);
+        requests[1](result);
+        await microtasks();
+        expect(marks.getMarkersForEditor(editor)).toEqual([]);
+        expect(marks.getMarkersForEditor(betaEditor)).toEqual([]);
+        expect(lumine.notifications.getNotifications().length).toBe(0);
+      });
+    }
+
+    it("clears highlights on edits and ignores the pre-edit response", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor).length).toBe(1);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      editor.getBuffer().insert([1, 0], "changed ");
       expect(marks.getMarkersForEditor(editor)).toEqual([]);
-      expect(changed).toHaveBeenCalled();
+      requests[1](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+    });
+
+    it("clears highlights when adding another cursor and ignores the pending response", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor).length).toBe(1);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      editor.addCursorAtBufferPosition([1, 0]);
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+      requests[1](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+    });
+
+    it("clears highlights when automatic highlighting is disabled and ignores pending results", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor).length).toBe(1);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      lumine.config.set("find-references.autoHighlight", false);
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+      requests[1](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+    });
+
+    it("ignores a result from the previously active editor", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      const betaEditor = await lumine.workspace.open(betaPath);
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(betaEditor)).toEqual([]);
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+    });
+
+    it("clears highlights when there is no active text editor and ignores pending results", async () => {
+      const { requests } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor).length).toBe(1);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      mainModule.manager.updateCurrentEditor(null);
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+      requests[1](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)).toEqual([]);
+    });
+
+    it("ignores a result after the package has deactivated", async () => {
+      const { requests } = addDeferredProvider();
+      const manager = mainModule.manager;
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      await lumine.packages.deactivatePackage("find-references");
+      requests[0](makeResult());
+      await microtasks();
+      expect(manager.getMarkersForEditor(editor)).toEqual([]);
+      expect(manager.markerLayersForEditors.size).toBe(0);
+    });
+
+    it("keeps highlights when a panel request supersedes a pending highlight request", async () => {
+      const { requests, findReferences } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      const markers = marks.getMarkersForEditor(editor);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      lumine.commands.dispatch(lumine.views.getView(editor), "find-references:show-panel");
+      requests[1](null);
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+      requests[2](null);
+      await microtasks();
+      advanceClock(delay);
+      expect(findReferences.calls.count()).toBe(3);
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+
+      editor.setCursorBufferPosition([0, 4]);
+      lumine.commands.dispatch(lumine.views.getView(editor), "find-references:show-panel");
+      requests[3](null);
+      await microtasks();
+      advanceClock(delay);
+      expect(findReferences.calls.count()).toBe(4);
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+    });
+
+    it("keeps highlights when a panel refresh supersedes a pending highlight request", async () => {
+      const { requests, findReferences } = addDeferredProvider();
+      const marks = mainModule.provideFindReferencesMarkers();
+
+      editor.setCursorBufferPosition([0, 2]);
+      advanceClock(delay);
+      requests[0](makeResult());
+      await microtasks();
+      const markers = marks.getMarkersForEditor(editor);
+
+      editor.setCursorBufferPosition([0, 3]);
+      advanceClock(delay);
+      const refresh = mainModule.manager.findReferencesAtPosition(
+        editor,
+        editor.getCursorBufferPosition(),
+      );
+      requests[1](null);
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
+      requests[2](null);
+      await refresh;
+
+      editor.setCursorBufferPosition([0, 4]);
+      const nextRefresh = mainModule.manager.findReferencesAtPosition(
+        editor,
+        editor.getCursorBufferPosition(),
+      );
+      requests[3](null);
+      await nextRefresh;
+      advanceClock(delay);
+      expect(findReferences.calls.count()).toBe(5);
+      requests[4](makeResult());
+      await microtasks();
+      expect(marks.getMarkersForEditor(editor)[0]).toBe(markers[0]);
     });
 
     it("highlights on command even when autoHighlight is disabled", async () => {

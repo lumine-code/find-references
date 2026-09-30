@@ -152,6 +152,36 @@ describe("find-references marker layer", () => {
     expect(third.items).toEqual([{ row: 7, end: 7 }]);
   });
 
+  it("seeds a newly attached layer from existing highlights without a change event", () => {
+    const markerLayer = markRanges([
+      [7, 0],
+      [7, 5],
+    ]);
+    layer.disposables.dispose();
+
+    const attached = makeLayer(editor);
+    expect(attached.update).toHaveBeenCalled();
+    expect(attached.cache.get("data")[0]).toBe(markerLayer.getMarkers()[0]);
+    expect(attached.items).toEqual([{ row: 7, end: 7 }]);
+  });
+
+  it("seeds an existing layer when reconnecting to markers without a change event", () => {
+    consumerDisposable.dispose();
+    const markerLayer = markRanges([
+      [12, 0],
+      [13, 5],
+    ]);
+    const replacementService = makeFakeService();
+    replacementService.markerLayers.set(editor, markerLayer);
+    layer.update.calls.reset();
+    expect(layer.items).toEqual([]);
+
+    consumerDisposable = mainModule.markerLayer.connect(replacementService);
+    expect(layer.update).toHaveBeenCalled();
+    expect(layer.cache.get("data")[0]).toBe(markerLayer.getMarkers()[0]);
+    expect(layer.items).toEqual([{ row: 12, end: 13 }]);
+  });
+
   it("stops updating the layer once the consumer is disposed", () => {
     consumerDisposable.dispose();
     layer.update.calls.reset();

@@ -6,7 +6,7 @@ References come from provider packages â€” typically language-server backends â€
 
 ## Features
 
-- **Auto highlight**: highlights every reference to the symbol under the cursor once the cursor rests for a configurable delay.
+- **Auto highlight**: highlights references after a configurable delay, keeping the previous highlights visible until the next lookup finishes.
 - **Results panel**: lists references grouped by file with line previews; a click jumps straight to the reference.
 - **Live results**: the panel tracks its position through edits and refreshes whenever a referenced buffer changes.
 - **Panel reuse**: a new lookup reuses the previous panel unless its results are pinned.
