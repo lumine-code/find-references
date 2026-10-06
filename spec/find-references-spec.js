@@ -52,7 +52,7 @@ describe("find-references", () => {
   });
 
   // A provider following the `find-references` service contract (see
-  // ide-client's references provider): `grammarScopes` is a getter,
+  // ide's references provider): `grammarScopes` is a getter,
   // `isEditorSupported` is a cheap sync check, and `findReferences` resolves
   // to `{ symbolName, references }` with range-compatible arrays, or `null`.
   function addProvider(findReferences) {
