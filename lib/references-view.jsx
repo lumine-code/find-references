@@ -231,7 +231,7 @@ module.exports = class ReferencesView {
     );
 
     this.filterAndGroupReferences();
-    this.bufferCache = this.buildOpenBufferCache();
+    this.replaceBufferCache();
 
     etch.initialize(this);
 
@@ -240,6 +240,12 @@ module.exports = class ReferencesView {
       // The panel refreshes in real time: when a buffer of the result set
       // stops changing, the lookup repeats at the tracked position.
       lumine.workspace.observeTextEditors((editor) => {
+        const buffer = editor.getBuffer();
+        if (this.cacheOwner.owned.delete(buffer) && !buffer.isDestroyed()) {
+          // Core counts retains as editors when deciding save prompts. Once
+          // adopted, this becomes a borrowed buffer rather than an extra hold.
+          buffer.release();
+        }
         this.subscriptions.add(
           editor.onDidStopChanging(() => {
             const path = editor.getPath();
@@ -285,6 +291,7 @@ module.exports = class ReferencesView {
   }
 
   async update({ references, symbolName }) {
+    if (this.destroyed) return;
     let changed = false;
     if (references && references !== this.references) {
       this.references = references;
@@ -292,7 +299,7 @@ module.exports = class ReferencesView {
       this.indexToReferenceMap.clear();
       this.collapsedIndices.clear();
       this.activeNavigationIndex = -1;
-      this.bufferCache = this.buildOpenBufferCache();
+      this.replaceBufferCache();
       this.completeBufferCache();
       changed = true;
     }
@@ -307,6 +314,7 @@ module.exports = class ReferencesView {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.retireBufferCache(this.cacheOwner);
     ReferencesView.instances.delete(this.uri);
     this.markerSubscriptions?.dispose();
     if (this.marker && !this.marker.isDestroyed()) this.marker.destroy();
@@ -387,20 +395,83 @@ module.exports = class ReferencesView {
     return cache;
   }
 
+  replaceBufferCache() {
+    const previous = this.cacheOwner;
+    this.bufferCache = this.buildOpenBufferCache();
+    this.cacheOwner = {
+      cache: this.bufferCache,
+      owned: new Set(),
+      pending: new Map(),
+      retired: false,
+    };
+    this.retireBufferCache(previous);
+  }
+
+  retireBufferCache(owner) {
+    if (!owner || owner.retired) return;
+    owner.retired = true;
+    owner.cache.clear();
+    owner.pending.clear();
+    const buffers = [...owner.owned];
+    owner.owned.clear();
+    for (const buffer of buffers) {
+      // A preview can become an editor's buffer. Release only our retain;
+      // TextBuffer destroys itself when no holder remains.
+      if (!buffer.isDestroyed()) buffer.release();
+    }
+  }
+
+  isCurrentCache(owner) {
+    return !this.destroyed && !owner.retired && this.cacheOwner === owner;
+  }
+
+  async loadPreviewBuffer(owner, filePath) {
+    let buffer;
+    let retained = false;
+    try {
+      buffer = await TextBuffer.load(filePath);
+      if (buffer.isDestroyed()) return;
+      buffer.retain();
+      retained = true;
+      if (!this.isCurrentCache(owner)) return;
+      // The user may have opened this file while its disk preview was loading.
+      // Their live buffer, including unsaved changes, takes precedence.
+      const open = lumine.workspace
+        .getTextEditors()
+        .find((editor) => editor.getPath() === filePath);
+      const borrowed = open?.getBuffer();
+      if (borrowed && !borrowed.isDestroyed()) {
+        owner.cache.set(filePath, borrowed);
+      } else {
+        if (!owner.owned.has(buffer)) {
+          owner.owned.add(buffer);
+          retained = false;
+        }
+        owner.cache.set(filePath, buffer);
+      }
+    } catch {
+      // Unreadable file; its rows render without a preview.
+    } finally {
+      if (retained && !buffer.isDestroyed()) buffer.release();
+    }
+  }
+
   async completeBufferCache() {
-    const cache = this.bufferCache;
-    const missing = [...this.paths].filter((path) => !cache.has(path));
+    const owner = this.cacheOwner;
+    if (!owner || !this.isCurrentCache(owner)) return;
+    const missing = [...this.paths].filter((path) => !owner.cache.has(path));
     if (missing.length === 0) return;
     await Promise.all(
-      missing.map(async (path) => {
-        try {
-          cache.set(path, await TextBuffer.load(path));
-        } catch {
-          // Unreadable file; its rows render without a preview.
+      missing.map((path) => {
+        let pending = owner.pending.get(path);
+        if (!pending) {
+          pending = this.loadPreviewBuffer(owner, path).finally(() => owner.pending.delete(path));
+          owner.pending.set(path, pending);
         }
+        return pending;
       }),
     );
-    if (cache === this.bufferCache && !this.destroyed) await etch.update(this);
+    if (this.isCurrentCache(owner)) await etch.update(this);
   }
 
   async refresh() {
