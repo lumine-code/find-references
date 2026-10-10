@@ -58,6 +58,11 @@ jobs:
         shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
+      LUMINE_HOME: ${{ github.workspace }}/.find-references-runtime/home
+      LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
+      TEMP: ${{ github.workspace }}/.find-references-runtime/tmp
+      TMP: ${{ github.workspace }}/.find-references-runtime/tmp
+      TMPDIR: ${{ github.workspace }}/.find-references-runtime/tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -71,6 +76,8 @@ jobs:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
+      - name: Create private runtime directories
+        run: mkdir -p "$LUMINE_HOME/electronUserData" "$TEMP"
       - name: Install Linux build and headless-display dependencies
         if: runner.os == 'Linux'
         run: |
@@ -101,11 +108,6 @@ jobs:
         working-directory: lumine
         timeout-minutes: 20
         run: |
-          export LUMINE_HOME="$RUNNER_TEMP/find-references-home"
-          export TEMP="$RUNNER_TEMP/find-references-temp"
-          export TMP="$TEMP"
-          export TMPDIR="$TEMP"
-          mkdir -p "$LUMINE_HOME" "$TEMP"
           if [ "$RUNNER_OS" = Linux ]; then
             xvfb-run --auto-servernum npm start -- --test ../find-references/spec
           else
