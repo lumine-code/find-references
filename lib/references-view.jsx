@@ -583,8 +583,8 @@ module.exports = class ReferencesView {
     const { range } = reference;
     // Reveal the row of the result if it happens to be folded.
     editor.unfoldBufferRow(range.start.row);
-    editor.getLastSelection().setBufferRange(range, { flash: true });
-    editor.scrollToCursorPosition();
+    editor.getLastSelection().setBufferRange(range, { flash: true, autoscroll: false });
+    editor.scrollToZone();
   }
 
   togglePinned() {
