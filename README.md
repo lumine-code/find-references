@@ -4,6 +4,8 @@ Highlight and list references to the symbol under the cursor.
 
 References come from provider packages — typically language-server backends — and are shown as highlight decorations in every visible editor and as a dockable results panel.
 
+Editor commands use the editor that dispatched them, including an inactive split. A pending lookup is discarded when its source text, path, or grammar changes. Panel lookups keep the position captured when requested while the cursor moves.
+
 ## Features
 
 - **Auto highlight**: highlights references after a configurable delay, keeping the previous highlights visible until the next lookup finishes.

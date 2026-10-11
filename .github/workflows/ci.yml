@@ -34,18 +34,22 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+      # npm may record the @lumine-code git forks with ssh URLs, but the runner
+      # has no ssh key, so rewrite them to anonymous HTTPS (the forks are public).
+      - name: Use HTTPS for GitHub git dependencies
+        run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install dependencies
         run: npm ci --ignore-scripts
       - name: Lint
         run: npm run lint
       - name: Check formatting
         run: npm run format:check
-      - name: Check package payload
-        run: npm pack --dry-run --json
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+      - name: Check package contents
+        run: npm pack --dry-run
 
   integration:
-    # Run the Jasmine spec suite inside a real Lumine build; the specs exercise
-    # the editor runtime (text editors, modal panels, and command dispatch).
     name: Lumine integration specs on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -58,11 +62,14 @@ jobs:
         shell: bash
     env:
       LUMINE_JASMINE_REPORTER: list
-      LUMINE_HOME: ${{ github.workspace }}/.find-references-runtime/home
       LUMINE_DISABLE_SHELLING_OUT_FOR_ENVIRONMENT: "true"
-      TEMP: ${{ github.workspace }}/.find-references-runtime/tmp
-      TMP: ${{ github.workspace }}/.find-references-runtime/tmp
-      TMPDIR: ${{ github.workspace }}/.find-references-runtime/tmp
+      LUMINE_HOME: ${{ github.workspace }}/find-references-spec-home
+      XDG_CONFIG_HOME: ${{ github.workspace }}/find-references-spec-home
+      HOME: ${{ github.workspace }}/find-references-spec-home
+      USERPROFILE: ${{ github.workspace }}/find-references-spec-home
+      TEMP: ${{ github.workspace }}/find-references-spec-tmp
+      TMP: ${{ github.workspace }}/find-references-spec-tmp
+      TMPDIR: ${{ github.workspace }}/find-references-spec-tmp
     steps:
       - uses: actions/checkout@v7
         with:
@@ -71,23 +78,18 @@ jobs:
         with:
           repository: lumine-code/lumine
           path: lumine
+      - name: Create the private home and temporary directory
+        run: mkdir -p "$TEMP" "$LUMINE_HOME/electronUserData"
       - uses: actions/setup-node@v7
         with:
           node-version-file: lumine/.nvmrc
           cache: npm
           cache-dependency-path: lumine/package-lock.json
-      - name: Create private runtime directories
-        run: mkdir -p "$LUMINE_HOME/electronUserData" "$TEMP"
       - name: Install Linux build and headless-display dependencies
         if: runner.os == 'Linux'
         run: |
-          # A third-party repository on the runner image answering 403 must not
-          # fail the job: the lists this actually needs still fetched, and the
-          # install below stays strict, so a missing package still stops us.
           sudo apt-get update || true
           sudo apt-get install -y xvfb libx11-dev libxkbfile-dev libsecret-1-dev
-      # npm records the @lumine-code git forks with ssh URLs, but the runner has
-      # no ssh key, so rewrite them to anonymous HTTPS (the forks are public).
       - name: Use HTTPS for GitHub git dependencies
         run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
       - name: Install package dependencies
@@ -108,7 +110,7 @@ jobs:
         working-directory: lumine
         timeout-minutes: 20
         run: |
-          if [ "$RUNNER_OS" = Linux ]; then
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
             xvfb-run --auto-servernum npm start -- --test ../find-references/spec
           else
             npm start -- --test ../find-references/spec

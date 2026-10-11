@@ -82,7 +82,7 @@ Returning `null` means no references are available and raises no notification. A
 
 Results drive both the references panel and the inline highlight of occurrences in the visible editors, so the ranges should be tight around the identifier rather than around the whole statement.
 
-Automatic highlights stay visible during cursor movement until the latest lookup finishes. Only the result for the current cursor position is applied; a latest empty result or `null` clears the previous highlights. Identical ranges keep their existing markers. Editing the buffer, disabling automatic highlighting, or leaving the single-cursor text-editor context clears them immediately.
+Automatic highlights stay visible during cursor movement until the latest lookup finishes. Only the result for the current cursor position is applied; a latest empty result or `null` clears the previous highlights. Identical ranges keep their existing markers. Editing the source buffer, changing its path or grammar, disabling automatic highlighting, or leaving the single-cursor text-editor context clears them immediately. Pending lookups for both highlights and panels discard answers from the previous source context; cursor movement alone keeps a panel's captured position.
 
 The highlighted markers are separately republished as [`find-references.markers`](find-references.markers.md) for scrollbar overviews to read.
 
