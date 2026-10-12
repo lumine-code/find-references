@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Emitter, TextBuffer, Range } = require("lumine");
+const { CompositeDisposable, Emitter, TextBuffer } = require("lumine");
 const etch = require("@lumine-code/etch");
 const Path = require("path");
 
@@ -356,43 +356,12 @@ module.exports = class ReferencesView {
     return `References: ${this.symbolName ?? "?"}`;
   }
 
-  copy({ signal } = {}) {
-    signal?.throwIfAborted();
-    if (this.destroyed || !this.marker?.isValid() || this.manager.disposed) {
-      throw new Error("The reference origin is no longer available.");
-    }
-    const uri = ReferencesView.nextUri();
-    const marker = this.marker.copy();
-    ReferencesView.setReferences(uri, {
-      manager: this.manager,
-      editor: this.editor,
-      marker,
-      symbolName: this.symbolName,
-      presentationState: {
-        overridable: false,
-        activeNavigationIndex: this.activeNavigationIndex,
-        collapsedIndices: [...this.collapsedIndices],
-        scrollTop: this.element.querySelector(".results-view").scrollTop,
-      },
-      references: this.references.map((reference) => ({
-        ...reference,
-        range: new Range(
-          [reference.range.start.row, reference.range.start.column],
-          [reference.range.end.row, reference.range.end.column],
-        ),
-      })),
-    });
-    let copy;
-    try {
-      copy = new ReferencesView(uri);
-      return copy;
-    } catch (error) {
-      ReferencesView.pendingContexts.delete(uri);
-      const partial = copy || ReferencesView.instances.get(uri);
-      if (partial) partial.destroy();
-      else if (!marker.isDestroyed()) marker.destroy();
-      throw error;
-    }
+  canCopy() {
+    return false;
+  }
+
+  getSingletonKey() {
+    return this.getURI();
   }
 
   getPaneItemRevision() {

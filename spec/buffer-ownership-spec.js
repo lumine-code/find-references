@@ -182,58 +182,56 @@ describe("find-references preview buffer ownership", () => {
     expect(panel.bufferCache.get(betaPath).isDestroyed()).toBe(false);
   });
 
-  it("copies the tracked origin and presentation while keeping owned previews independent", async () => {
+  it("silently skips copying without creating another origin or preview buffer", async () => {
     const source = createPanel([betaPath, gammaPath]);
+    await lumine.workspace.open(source);
     await conditionPromise(() => source.bufferCache.has(betaPath));
     const sourceBuffer = source.bufferCache.get(betaPath);
-    source.activeNavigationIndex = 0;
-    await source.setGroupCollapsed(0, true);
-    const copy = source.copy();
-    panels.push(copy);
-    await conditionPromise(() => copy.bufferCache.has(betaPath));
-    const copyBuffer = copy.bufferCache.get(betaPath);
-    expect(copy.getURI()).not.toBe(source.getURI());
-    expect(copy.marker).not.toBe(source.marker);
-    expect(copy.references[0].range).not.toBe(source.references[0].range);
-    expect(copy.activeNavigationIndex).toBe(0);
-    expect(copy.collapsedIndices.has(0)).toBe(true);
-    expect(copy.overridable).toBe(false);
-    expect(copyBuffer).not.toBe(sourceBuffer);
-    await source.destroy();
-    expect(sourceBuffer.isDestroyed()).toBe(true);
-    expect(copy.marker.isDestroyed()).toBe(false);
-    expect(copyBuffer.isDestroyed()).toBe(false);
-    await copy.destroy();
-    expect(copyBuffer.isDestroyed()).toBe(true);
+    const count = editor.getBuffer().getMarkerCount();
+    const panes = lumine.workspace.getPanes();
+    const warnings = spyOn(lumine.notifications, "addWarning");
+    const errors = spyOn(lumine.notifications, "addError");
+    expect(await lumine.workspace.copyPaneItem(source, { splitDirection: "right" })).toBeNull();
+    expect(editor.getBuffer().getMarkerCount()).toBe(count);
+    expect(source.bufferCache.get(betaPath)).toBe(sourceBuffer);
+    expect(sourceBuffer.isDestroyed()).toBe(false);
+    expect(lumine.workspace.getPanes()).toEqual(panes);
+    expect(warnings).not.toHaveBeenCalled();
+    expect(errors).not.toHaveBeenCalled();
   });
 
-  it("releases uninserted copies and pending origins when their manager retires", async () => {
+  it("retires separate query panels and their pending origins with their manager", async () => {
     const manager = lumine.packages.getActivePackage("find-references").mainModule.manager;
-    const source = createPanel([betaPath], manager);
-    const copy = source.copy();
-    panels.push(copy);
+    const first = createPanel([betaPath], manager);
+    const second = createPanel([gammaPath], manager);
+    await lumine.workspace.open(first);
+    await lumine.workspace.open(second);
+    expect(first.getSingletonKey()).not.toBe(second.getSingletonKey());
     const pendingURI = View.nextUri();
     const marker = editor.markBufferRange([
       [0, 0],
       [0, 4],
     ]);
     View.setReferences(pendingURI, { manager, marker });
-    expect(lumine.workspace.paneForItem(copy)).toBeFalsy();
     manager.dispose();
-    expect(source.isDestroyed()).toBe(true);
-    expect(copy.isDestroyed()).toBe(true);
+    expect(first.isDestroyed()).toBe(true);
+    expect(second.isDestroyed()).toBe(true);
     expect(marker.isDestroyed()).toBe(true);
-    expect(View.instances.has(copy.uri)).toBe(false);
+    expect(View.instances.has(first.uri)).toBe(false);
+    expect(View.instances.has(second.uri)).toBe(false);
     expect(View.pendingContexts.has(pendingURI)).toBe(false);
-    expect(() => copy.copy()).toThrow();
   });
 
-  it("rejects a cancelled copy before allocating another origin marker", () => {
-    const source = createPanel([editor.getPath()]);
-    const count = editor.getBuffer().getMarkerCount();
-    const controller = new AbortController();
-    controller.abort();
-    expect(() => source.copy({ signal: controller.signal })).toThrow();
-    expect(editor.getBuffer().getMarkerCount()).toBe(count);
+  it("moves a result panel with its original tracked marker and independent resource key", async () => {
+    const source = createPanel([betaPath]);
+    await lumine.workspace.open(source);
+    const marker = source.marker;
+    const root = source.element;
+    const key = source.getSingletonKey();
+    const moved = await lumine.workspace.movePaneItem(source, { splitDirection: "right" });
+    expect(moved.item).toBe(source);
+    expect(source.marker).toBe(marker);
+    expect(source.element).toBe(root);
+    expect(source.getSingletonKey()).toBe(key);
   });
 });
