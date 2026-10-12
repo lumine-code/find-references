@@ -1,5 +1,5 @@
 /** @jsx etch.dom */
-const { CompositeDisposable, Emitter, TextBuffer } = require("lumine");
+const { CompositeDisposable, Emitter, TextBuffer, Range } = require("lumine");
 const etch = require("@lumine-code/etch");
 const Path = require("path");
 
@@ -182,6 +182,9 @@ module.exports = class ReferencesView {
       instance.update(context);
     } else {
       // The panel will exist soon; store the context for its constructor.
+      const previous = ReferencesView.pendingContexts.get(uri);
+      if (previous && previous.marker !== context.marker && !previous.marker.isDestroyed())
+        previous.marker.destroy();
       ReferencesView.pendingContexts.set(uri, context);
     }
   }
@@ -199,11 +202,13 @@ module.exports = class ReferencesView {
     this.symbolName = context.symbolName;
 
     this.destroyed = false;
+    this.revision = 0;
     // Whether the next lookup may reuse this panel; toggled by the pin button.
-    this.overridable = true;
-    this.activeNavigationIndex = -1;
+    this.overridable = context.presentationState?.overridable ?? true;
+    this.activeNavigationIndex = context.presentationState?.activeNavigationIndex ?? -1;
     this.lastNavigationIndex = -1;
-    this.collapsedIndices = new Set();
+    this.collapsedIndices = new Set(context.presentationState?.collapsedIndices || []);
+    this.pendingScrollTop = context.presentationState?.scrollTop;
     this.indexToReferenceMap = new Map();
     this.previewStyle = { fontFamily: "" };
     this.ignoredNames = null;
@@ -234,6 +239,9 @@ module.exports = class ReferencesView {
     this.replaceBufferCache();
 
     etch.initialize(this);
+    this.element.addEventListener("focus", () => this.focus());
+    if (this.pendingScrollTop !== undefined)
+      requestAnimationFrame(() => this.restoreInitialScroll());
 
     this.trackMarker(context.marker);
     this.subscriptions.add(
@@ -276,6 +284,7 @@ module.exports = class ReferencesView {
   // Follow a new position marker, releasing (and destroying) the previous one.
   trackMarker(marker) {
     if (marker === this.marker) return;
+    this.revision++;
     this.markerSubscriptions?.dispose();
     if (this.marker && !this.marker.isDestroyed()) this.marker.destroy();
     this.marker = marker;
@@ -294,6 +303,7 @@ module.exports = class ReferencesView {
     if (this.destroyed) return;
     let changed = false;
     if (references && references !== this.references) {
+      this.revision++;
       this.references = references;
       this.filterAndGroupReferences();
       this.indexToReferenceMap.clear();
@@ -304,6 +314,7 @@ module.exports = class ReferencesView {
       changed = true;
     }
     if (symbolName && symbolName !== this.symbolName) {
+      this.revision++;
       this.symbolName = symbolName;
       this.emitter.emit("did-change-title");
       changed = true;
@@ -319,8 +330,9 @@ module.exports = class ReferencesView {
     this.markerSubscriptions?.dispose();
     if (this.marker && !this.marker.isDestroyed()) this.marker.destroy();
     this.subscriptions.dispose();
+    this.emitter.emit("did-destroy");
     this.emitter.dispose();
-    return etch.destroy(this);
+    return this.virtualNode ? etch.destroy(this) : Promise.resolve();
   }
 
   close() {
@@ -342,6 +354,70 @@ module.exports = class ReferencesView {
 
   getTitle() {
     return `References: ${this.symbolName ?? "?"}`;
+  }
+
+  copy({ signal } = {}) {
+    signal?.throwIfAborted();
+    if (this.destroyed || !this.marker?.isValid() || this.manager.disposed) {
+      throw new Error("The reference origin is no longer available.");
+    }
+    const uri = ReferencesView.nextUri();
+    const marker = this.marker.copy();
+    ReferencesView.setReferences(uri, {
+      manager: this.manager,
+      editor: this.editor,
+      marker,
+      symbolName: this.symbolName,
+      presentationState: {
+        overridable: false,
+        activeNavigationIndex: this.activeNavigationIndex,
+        collapsedIndices: [...this.collapsedIndices],
+        scrollTop: this.element.querySelector(".results-view").scrollTop,
+      },
+      references: this.references.map((reference) => ({
+        ...reference,
+        range: new Range(
+          [reference.range.start.row, reference.range.start.column],
+          [reference.range.end.row, reference.range.end.column],
+        ),
+      })),
+    });
+    let copy;
+    try {
+      copy = new ReferencesView(uri);
+      return copy;
+    } catch (error) {
+      ReferencesView.pendingContexts.delete(uri);
+      const partial = copy || ReferencesView.instances.get(uri);
+      if (partial) partial.destroy();
+      else if (!marker.isDestroyed()) marker.destroy();
+      throw error;
+    }
+  }
+
+  getPaneItemRevision() {
+    return this.revision;
+  }
+
+  restoreInitialScroll() {
+    if (!this.destroyed && this.element.isConnected && this.pendingScrollTop !== undefined) {
+      this.element.querySelector(".results-view").scrollTop = this.pendingScrollTop;
+      this.pendingScrollTop = undefined;
+    }
+  }
+
+  focus() {
+    if (this.destroyed) return;
+    this.restoreInitialScroll();
+    this.element.querySelector(".results-view").focus();
+  }
+
+  isDestroyed() {
+    return this.destroyed;
+  }
+
+  onDidDestroy(callback) {
+    return this.emitter.on("did-destroy", callback);
   }
 
   getIconName() {

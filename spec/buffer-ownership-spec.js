@@ -61,11 +61,11 @@ describe("find-references preview buffer ownership", () => {
 
   const references = (...files) =>
     files.map((file) => ({ path: file, range: new Range([0, 0], [0, 4]) }));
-  function createPanel(files) {
+  function createPanel(files, manager = { findReferencesAtPosition: async () => null }) {
     const uri = View.nextUri();
     View.setReferences(uri, {
       editor,
-      manager: { findReferencesAtPosition: async () => null },
+      manager,
       marker: editor.markBufferRange([
         [0, 0],
         [0, 4],
@@ -180,5 +180,60 @@ describe("find-references preview buffer ownership", () => {
 
     expect(TextBuffer.load).toHaveBeenCalledTimes(1);
     expect(panel.bufferCache.get(betaPath).isDestroyed()).toBe(false);
+  });
+
+  it("copies the tracked origin and presentation while keeping owned previews independent", async () => {
+    const source = createPanel([betaPath, gammaPath]);
+    await conditionPromise(() => source.bufferCache.has(betaPath));
+    const sourceBuffer = source.bufferCache.get(betaPath);
+    source.activeNavigationIndex = 0;
+    await source.setGroupCollapsed(0, true);
+    const copy = source.copy();
+    panels.push(copy);
+    await conditionPromise(() => copy.bufferCache.has(betaPath));
+    const copyBuffer = copy.bufferCache.get(betaPath);
+    expect(copy.getURI()).not.toBe(source.getURI());
+    expect(copy.marker).not.toBe(source.marker);
+    expect(copy.references[0].range).not.toBe(source.references[0].range);
+    expect(copy.activeNavigationIndex).toBe(0);
+    expect(copy.collapsedIndices.has(0)).toBe(true);
+    expect(copy.overridable).toBe(false);
+    expect(copyBuffer).not.toBe(sourceBuffer);
+    await source.destroy();
+    expect(sourceBuffer.isDestroyed()).toBe(true);
+    expect(copy.marker.isDestroyed()).toBe(false);
+    expect(copyBuffer.isDestroyed()).toBe(false);
+    await copy.destroy();
+    expect(copyBuffer.isDestroyed()).toBe(true);
+  });
+
+  it("releases uninserted copies and pending origins when their manager retires", async () => {
+    const manager = lumine.packages.getActivePackage("find-references").mainModule.manager;
+    const source = createPanel([betaPath], manager);
+    const copy = source.copy();
+    panels.push(copy);
+    const pendingURI = View.nextUri();
+    const marker = editor.markBufferRange([
+      [0, 0],
+      [0, 4],
+    ]);
+    View.setReferences(pendingURI, { manager, marker });
+    expect(lumine.workspace.paneForItem(copy)).toBeFalsy();
+    manager.dispose();
+    expect(source.isDestroyed()).toBe(true);
+    expect(copy.isDestroyed()).toBe(true);
+    expect(marker.isDestroyed()).toBe(true);
+    expect(View.instances.has(copy.uri)).toBe(false);
+    expect(View.pendingContexts.has(pendingURI)).toBe(false);
+    expect(() => copy.copy()).toThrow();
+  });
+
+  it("rejects a cancelled copy before allocating another origin marker", () => {
+    const source = createPanel([editor.getPath()]);
+    const count = editor.getBuffer().getMarkerCount();
+    const controller = new AbortController();
+    controller.abort();
+    expect(() => source.copy({ signal: controller.signal })).toThrow();
+    expect(editor.getBuffer().getMarkerCount()).toBe(count);
   });
 });
