@@ -1,0 +1,17 @@
+{
+  "title": "find-references",
+  "description": "Find a function definition and its call sites using TypeScript.",
+  "recordedOn": "2026-10-13",
+  "sourceRevision": "204882463c14398c7a1f34067e60acb353d7e1ce",
+  "mode": "normal",
+  "fontSettings": "default",
+  "themeSourceRevision": "6564a9e21899b5541e9c8f8006f9be6d6d72e6ad",
+  "images": [
+    {
+      "file": "demo.png",
+      "label": "Find a function definition and its call sites using TypeScript.",
+      "width": 1150,
+      "height": 600
+    }
+  ]
+}

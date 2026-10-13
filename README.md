@@ -15,6 +15,8 @@ Editor commands use the editor that dispatched them, including an inactive split
 - **Noise guard**: skips highlighting when a provider reports an outsized share of the buffer lines, e.g. for a mundane token.
 - **Scrollbar markers**: shows the reference occurrences on the scrollbar and minimap via the marker hub.
 
+![Find a function definition and its call sites using TypeScript.](.github/demo.png)
+
 ## Installation
 
 To install `find-references` search for it in the Install pane of the Lumine settings, or run the command `lumine --install lumine-code/find-references`.
