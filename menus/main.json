@@ -1,0 +1,31 @@
+{
+  "menu": [
+    {
+      "label": "Search",
+      "submenu": [
+        {
+          "label": "Find References",
+          "command": "find-references:show-panel"
+        }
+      ]
+    },
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "Find References",
+          "submenu": [
+            {
+              "label": "Find References",
+              "command": "find-references:show-panel"
+            },
+            {
+              "label": "Highlight References",
+              "command": "find-references:highlight"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

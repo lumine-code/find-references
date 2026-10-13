@@ -21,7 +21,7 @@ To install `find-references` search for it in the Install pane of the Lumine set
 
 ## Commands
 
-Commands available in `lumine-text-editor:not([mini])`:
+Commands available in `lumine-workspace`:
 
 - `find-references:highlight`: highlight references to the symbol under the cursor,
 - `find-references:show-panel`: list references to the symbol under the cursor in a results panel.
