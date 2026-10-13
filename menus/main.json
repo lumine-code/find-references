@@ -5,7 +5,9 @@
       "submenu": [
         {
           "label": "Find References",
-          "command": "find-references:show-panel"
+          "command": "find-references:show-panel",
+          "group": "symbols",
+          "order": 50
         }
       ]
     },
