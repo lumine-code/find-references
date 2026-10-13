@@ -1,6 +1,9 @@
 /** @jsx etch.dom */
 const { CompositeDisposable, Emitter, TextBuffer } = require("lumine");
 const etch = require("@lumine-code/etch");
+// The renderer owns this package's Etch scheduler; initialize it before the
+// first view renders, while highlight-only sessions never need to load Etch.
+etch.setScheduler(lumine.views);
 const Path = require("path");
 
 function pluralize(count, singular, plural = `${singular}s`) {
@@ -156,7 +159,7 @@ let nextPanelId = 1;
 module.exports = class ReferencesView {
   // Base URI; each instance appends `/1`, `/2`, … so lookups can open in
   // separate panels.
-  static URI = "lumine://find-references/results";
+  static URI = require("./view-uri");
 
   // Context values for panels that have not been instantiated yet.
   static pendingContexts = new Map();
