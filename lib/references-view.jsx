@@ -21,8 +21,13 @@ function displayPath(filePath) {
 }
 
 function descendsFrom(filePath, projectPath) {
-  const prefix = projectPath.endsWith(Path.sep) ? projectPath : projectPath + Path.sep;
-  return filePath.startsWith(prefix);
+  const relative = Path.relative(projectPath, filePath);
+  return (
+    relative.length > 0 &&
+    relative !== ".." &&
+    !relative.startsWith(`..${Path.sep}`) &&
+    !Path.isAbsolute(relative)
+  );
 }
 
 // Results open on the opposite side of the panel's own split so the panel and
