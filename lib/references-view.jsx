@@ -248,8 +248,7 @@ module.exports = class ReferencesView {
 
     etch.initialize(this);
     this.element.addEventListener("focus", () => this.focus());
-    if (this.pendingScrollTop !== undefined)
-      requestAnimationFrame(() => this.restoreInitialScroll());
+    if (this.pendingScrollTop !== undefined) this.scheduleInitialScroll();
 
     this.trackMarker(context.marker);
     this.subscriptions.add(
@@ -333,6 +332,9 @@ module.exports = class ReferencesView {
   destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.initialScrollGeneration = (this.initialScrollGeneration || 0) + 1;
+    if (this.initialScrollFrame != null)
+      this.initialScrollWindow.cancelAnimationFrame(this.initialScrollFrame);
     this.retireBufferCache(this.cacheOwner);
     ReferencesView.instances.delete(this.uri);
     this.markerSubscriptions?.dispose();
@@ -381,6 +383,24 @@ module.exports = class ReferencesView {
       this.element.querySelector(".results-view").scrollTop = this.pendingScrollTop;
       this.pendingScrollTop = undefined;
     }
+  }
+
+  scheduleInitialScroll() {
+    const generation = (this.initialScrollGeneration || 0) + 1;
+    this.initialScrollGeneration = generation;
+    if (this.initialScrollFrame != null)
+      this.initialScrollWindow.cancelAnimationFrame(this.initialScrollFrame);
+    this.initialScrollWindow = this.element.ownerDocument.defaultView;
+    this.initialScrollFrame = this.initialScrollWindow.requestAnimationFrame(() => {
+      if (this.destroyed || generation !== this.initialScrollGeneration) return;
+      this.initialScrollFrame = null;
+      this.initialScrollWindow = null;
+      this.restoreInitialScroll();
+    });
+  }
+
+  didAttachToWindow() {
+    if (this.pendingScrollTop !== undefined) this.scheduleInitialScroll();
   }
 
   focus() {
