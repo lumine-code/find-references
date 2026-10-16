@@ -83,13 +83,14 @@ describe("Reference command editor targets", () => {
     expect(calls.calls.mostRecent().args[0]).toBe(first);
     expect(main.provideFindReferencesMarkers().getMarkersForEditor(first).length).toBe(1);
   });
-  it("finds references from an unrelated focused surface using the active editor", async () => {
+  it("does not borrow an editor from an unrelated focused surface", async () => {
     const button = document.createElement("button");
     lumine.workspace.getElement().appendChild(button);
     try {
       button.focus();
       await lumine.commands.dispatch(button, "find-references:show-panel");
-      expect(calls).toHaveBeenCalledOnceWith(first, first.getCursorBufferPosition());
+      expect(calls).not.toHaveBeenCalled();
+      expect(lumine.commands.canDispatch(button, "find-references:show-panel")).toBe(false);
     } finally {
       button.remove();
     }
@@ -97,7 +98,7 @@ describe("Reference command editor targets", () => {
   it("explains when the active file has no reference provider", async () => {
     lease.dispose();
     spyOn(lumine.notifications, "addWarning");
-    await lumine.commands.dispatch(lumine.workspace.getElement(), "find-references:show-panel");
+    await lumine.commands.dispatch(first.element, "find-references:show-panel");
     expect(lumine.notifications.addWarning).toHaveBeenCalledWith(
       "No reference provider is available for this file.",
     );
@@ -106,7 +107,7 @@ describe("Reference command editor targets", () => {
   it("explains why finding references with multiple cursors cannot proceed", async () => {
     first.addCursorAtBufferPosition([0, 3]);
     spyOn(lumine.notifications, "addWarning");
-    await lumine.commands.dispatch(lumine.workspace.getElement(), "find-references:show-panel");
+    await lumine.commands.dispatch(first.element, "find-references:show-panel");
     expect(lumine.notifications.addWarning).toHaveBeenCalledWith(
       "Finding references requires a single cursor.",
     );
