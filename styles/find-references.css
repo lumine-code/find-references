@@ -60,6 +60,10 @@ lumine-text-editor .highlight.find-references-reference .region {
   color: var(--text-color-subtle);
 }
 
+.find-references-pane .results-view .selected .path-match-number {
+  color: var(--text-color-selected);
+}
+
 .find-references-pane .results-view .preview {
   word-break: break-all;
   white-space: pre;
