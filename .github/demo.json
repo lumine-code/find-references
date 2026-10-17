@@ -1,9 +1,9 @@
 {
   "title": "find-references",
   "description": "Find a function definition and its call sites using TypeScript.",
-  "recordedOn": "2026-10-14",
-  "sourceRevision": "e794298b174acc043d1eb5318e425053b86aa2c9",
-  "themeSourceRevision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+  "recordedOn": "2026-10-17",
+  "sourceRevision": "8b0d433065a111e2be442914fa089f862d456a10",
+  "themeSourceRevision": "80e8864a2e9a891ef1f911d78ab8f03fb3911f58",
   "mode": "normal",
   "fontSettings": "default",
   "scenario": "demo.js",
@@ -11,8 +11,8 @@
   "environment": {
     "platform": "win32",
     "arch": "x64",
-    "electron": "44.7.0",
-    "chrome": "152.0.7977.130",
+    "electron": "44.9.0",
+    "chrome": "152.0.7977.167",
     "devicePixelRatio": 1,
     "locale": "en-GB",
     "fontFamily": "Fira Code, Menlo, DejaVu Sans Mono, Consolas, monospace",
@@ -21,64 +21,65 @@
   },
   "viewport": { "width": 1150, "height": 600 },
   "cornerRadius": 10,
+  "privacy": { "version": 1, "location": "neutral", "textChecked": true },
   "sources": {
     "editor": {
-      "revision": "8be8f86075ad93df038610d82b3ac6d99329957d",
+      "revision": "200598247a0ae40f5e0bf1998b44f7fe77bc0aa7",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "package": {
-      "revision": "e794298b174acc043d1eb5318e425053b86aa2c9",
-      "dirty": true,
-      "workingTreeHash": "99c8b279726b02cb5b126e1a678b186377dd0f663ea10ea6819385edfd838760"
+      "revision": "8b0d433065a111e2be442914fa089f862d456a10",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "find-references": {
-      "revision": "e794298b174acc043d1eb5318e425053b86aa2c9",
-      "dirty": true,
-      "workingTreeHash": "99c8b279726b02cb5b126e1a678b186377dd0f663ea10ea6819385edfd838760"
+      "revision": "8b0d433065a111e2be442914fa089f862d456a10",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "documentation-view": {
-      "revision": "eedd6f69e19677399ddd9617858da255bb8f189c",
-      "dirty": true,
-      "workingTreeHash": "070afa5c708e3223333074671734968384f9f9554ddfb2633afc5de10cc754fe"
+      "revision": "b3cd21aa39d0385c4c045d0ea7f7cea38ed3bd4d",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "hover": {
-      "revision": "4db1205d5c41405ba1d5c0d741eeaf3399e3693f",
-      "dirty": true,
-      "workingTreeHash": "a395c209f899af107515f7fdfbf4f05caacf0852fe6e2fd7c81e01a3f62916f6"
+      "revision": "ebffd6e9b8580bff5337e08dc0279f24ea9b7bd9",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ide": {
-      "revision": "812c09829d25abb79f6292280d1eb54fc80b6c82",
-      "dirty": true,
-      "workingTreeHash": "621e6855f75f1585be31afa484047d4a9ce6a07fb26a1cf14a842af78dd7c037"
+      "revision": "b305df1d2af026cba795700e29e284b90959a968",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "ide-typescript": {
-      "revision": "a6fc886a96b18620cca73393d9dc1baec3342963",
+      "revision": "ff92384775b31c6ca6ccaa1d73d18a15229cac99",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "language-typescript": {
-      "revision": "b2c0f69d529ec600f3ff5baf2635a27560b318c8",
+      "revision": "a9f16aff94a140dc00342375d43e49d413a4715a",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "linter": {
-      "revision": "adec0e9d64ffe64f9e041df825324efc0795601b",
-      "dirty": true,
-      "workingTreeHash": "bc72c0afefb416d396eb209e3ef758b6ef4cb17d5a24d3d4af95b1b4fbdb8e75"
+      "revision": "73355d0a8caaebe43904fdb1dbf0dd03f02a2994",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "linter-panel": {
-      "revision": "52b4727794bf840757d2c6ec818329f954ecfb25",
-      "dirty": true,
-      "workingTreeHash": "2241dd689405cc52970f9f0be515276ed372a29e9bfa068e89f434bbcac245f6"
+      "revision": "49eb7742b992eb0a3aa89be840740309d324b0ad",
+      "dirty": false,
+      "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "marker": {
-      "revision": "bb4fc8fec8c9d09fe59db9b0d70352ff33cde8f8",
+      "revision": "56b7b100f9b8b1e532645399f14fe662795d0861",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "one-theme": {
-      "revision": "7fbd047a87ecf1367c896b19ff270cdc28d319f7",
+      "revision": "80e8864a2e9a891ef1f911d78ab8f03fb3911f58",
       "dirty": false,
       "workingTreeHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     }
@@ -99,7 +100,7 @@
       "label": "Find a function definition and its call sites using TypeScript.",
       "width": 1150,
       "height": 600,
-      "sha256": "7582691cc67d927cfee6fd35911970bcc3d7d9782a314407e78aad42b5aef7cd"
+      "sha256": "0f7d87ff75a6998e78519654c5cbc3355daf4e99aae644dd391feb9edc6ef24a"
     }
   ]
 }
