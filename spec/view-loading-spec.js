@@ -2,6 +2,7 @@ const { execFileSync } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 function deferred() {
   let resolve;
@@ -44,8 +45,7 @@ describe("Find References native results view", () => {
     providerLease.dispose();
     await lumine.packages.deactivatePackage("find-references");
     editor.destroy();
-    await lumine.fileWatchClient.settlePendingTeardown();
-    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    await removeTemporaryDirectory(directory);
   });
 
   it("loads its bootstrap without the panel renderer or Etch", () => {

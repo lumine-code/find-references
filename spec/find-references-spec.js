@@ -3,6 +3,7 @@ const os = require("os");
 const path = require("path");
 const { CompositeDisposable, Icon } = require("lumine");
 const etch = require("@lumine-code/etch");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 let ReferencesView;
 
 const packageRoot = path.join(__dirname, "..");
@@ -41,9 +42,8 @@ describe("find-references", () => {
     disposables.dispose();
     await lumine.packages.deactivatePackage("find-references");
     for (const open of lumine.workspace.getTextEditors()) open.destroy();
-    // Retries because Windows keeps a directory non-empty until the last handle on a child
-    // closes, and `force` swallows only ENOENT.
-    fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    lumine.project.setPaths([]);
+    await removeTemporaryDirectory(tempDir);
   });
 
   it("registers file commands only on non-mini editors", () => {

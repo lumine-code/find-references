@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { Range, TextBuffer } = require("lumine");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 describe("find-references preview buffer ownership", () => {
   let View, editor, directory, temporaryRoot, betaPath, gammaPath, panels, loads, hold;
@@ -53,10 +54,8 @@ describe("find-references preview buffer ownership", () => {
     await lumine.packages.deactivatePackage("find-references");
     for (const open of lumine.workspace.getTextEditors()) open.destroy();
     for (const buffer of loads) if (!buffer.isDestroyed()) buffer.destroy();
-    const relative = path.relative(temporaryRoot, directory);
-    if (path.isAbsolute(relative) || relative === ".." || relative.startsWith(`..${path.sep}`))
-      throw new Error("Temporary directory escaped its root");
-    fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
+    lumine.project.setPaths([]);
+    await removeTemporaryDirectory(directory);
   });
 
   const references = (...files) =>

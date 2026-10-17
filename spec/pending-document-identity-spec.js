@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 describe("References for a pending document identity", () => {
   let main, editor, preview, scratch, temporary, lease, finish, started;
@@ -43,15 +44,7 @@ describe("References for a pending document identity", () => {
     editor?.destroy();
     preview?.destroy();
     lumine.project.setPaths([]);
-    await lumine.fileWatchClient.settlePendingTeardown();
-    if (path.dirname(fs.realpathSync.native(scratch)) !== temporary)
-      throw Error("Reference identity cleanup escaped its private root");
-    await fs.promises.rm(scratch, {
-      recursive: true,
-      force: true,
-      maxRetries: 10,
-      retryDelay: 50,
-    });
+    await removeTemporaryDirectory(scratch);
   });
   async function prepare(kind) {
     if (kind === "grammar") {

@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 beforeEach(() => {
   for (const method of ["openExternal", "openPath", "showItemInFolder", "openApplication"])
@@ -53,10 +54,7 @@ describe("Reference command editor targets", () => {
     first?.destroy();
     second?.destroy();
     lumine.project.setPaths([]);
-    await lumine.fileWatchClient.settlePendingTeardown();
-    if (path.dirname(fs.realpathSync.native(scratch)) !== temporary)
-      throw Error("Reference target cleanup escaped its private root");
-    fs.rmSync(scratch, { recursive: true, force: true });
+    await removeTemporaryDirectory(scratch);
   });
   for (const command of ["highlight", "show-panel"]) {
     it(`requests ${command} from its inactive split editor`, async () => {

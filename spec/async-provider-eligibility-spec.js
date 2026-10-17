@@ -1,6 +1,7 @@
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
+const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 describe("Reference provider eligibility", () => {
   let main, editor, root, previousPaths, leases;
@@ -30,21 +31,9 @@ describe("Reference provider eligibility", () => {
       await lumine.packages.unloadPackage("find-references");
     editor?.destroy();
     lumine.project.setPaths(previousPaths);
-    await lumine.fileWatchClient.settlePendingTeardown();
     for (const setting of ["autoHighlight", "skipCurrentReference"])
       lumine.config.unset(`find-references.${setting}`);
-    const temporary = fs.realpathSync(os.tmpdir());
-    const target = fs.realpathSync(root);
-    const relative = path.relative(temporary, target);
-    if (
-      !relative ||
-      path.isAbsolute(relative) ||
-      relative === ".." ||
-      relative.startsWith(`..${path.sep}`)
-    )
-      throw new Error("Fixture cleanup escaped the private temporary directory.");
-    fs.unlinkSync(path.join(target, "source.txt"));
-    fs.rmdirSync(target);
+    await removeTemporaryDirectory(root);
     main = editor = root = leases = null;
   });
 
