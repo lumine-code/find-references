@@ -30,14 +30,14 @@ In your `package.json`:
 ```ts
 type FindReferencesMarkers = {
   getMarkersForEditor(editor: TextEditor): DisplayMarker[];
-  onDidChangeMarkers(callback: () => void): Disposable;
+  onDidChangeMarkers(callback: (editor: TextEditor) => void): Disposable;
 };
 ```
 
-| Member                         | Description                                                            |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| `getMarkersForEditor(editor)`  | The markers currently highlighted in that editor. Empty when none are. |
-| `onDidChangeMarkers(callback)` | Fires whenever the highlighted set changes, in any editor.             |
+| Member                         | Description                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `getMarkersForEditor(editor)`  | The markers currently highlighted in that editor. Empty when none are.                           |
+| `onDidChangeMarkers(callback)` | Reports the editor whose native markers changed, including positions and validity after an edit. |
 
 This is a deliberately narrow facade over the package's internal manager, so consumers cannot reach its state.
 
@@ -64,7 +64,7 @@ module.exports = {
 
 ## Behavior
 
-`onDidChangeMarkers` carries no payload — it says only that something changed. Re-query the editors you care about rather than trying to track a delta.
+`onDidChangeMarkers` receives the affected editor. Re-query that editor and skip markers for which `isValid()` returns `false`, matching native highlight decorations. Native position and validity changes report immediately; they do not trigger or wait for another reference request.
 
 It also does not replay the current state on subscribe, so call `getMarkersForEditor` yourself for the initial value.
 

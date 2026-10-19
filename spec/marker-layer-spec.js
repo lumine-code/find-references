@@ -95,7 +95,7 @@ describe("find-references marker layer", () => {
         [11, 5],
       ],
     );
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.update).toHaveBeenCalled();
     expect(layer.items).toEqual([
       { row: 2, end: 2 },
@@ -115,7 +115,7 @@ describe("find-references marker layer", () => {
         [3, 5],
       ],
     );
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.items).toEqual([
       { row: 20, end: 20 },
       { row: 3, end: 3 },
@@ -129,10 +129,10 @@ describe("find-references marker layer", () => {
       [2, 0],
       [2, 5],
     ]);
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     initial.clear();
-    service.emitter.emit("did-change-markers");
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.update.calls.count()).toBeGreaterThan(0);
     expect(getMarkers).not.toHaveBeenCalled();
 
@@ -150,12 +150,79 @@ describe("find-references marker layer", () => {
       [2, 0],
       [2, 5],
     ]);
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.items.length).toBe(1);
 
     markerLayer.clear();
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.items).toEqual([]);
+  });
+
+  it("drops a reference invalidated by Enter while valid anchors keep following the edit", () => {
+    const markers = editor.addMarkerLayer();
+    const edited = markers.markScreenRange(
+      [
+        [2, 0],
+        [2, 5],
+      ],
+      { invalidate: "inside" },
+    );
+    const following = markers.markScreenRange(
+      [
+        [10, 0],
+        [10, 5],
+      ],
+      { invalidate: "inside" },
+    );
+    service.markerLayers.set(editor, markers);
+    service.emitter.emit("did-change-markers", editor);
+    expect(layer.items.length).toBe(2);
+
+    editor.getBuffer().insert([2, 2], "\n");
+
+    expect(edited.isValid()).toBe(false);
+    expect(following.isValid()).toBe(true);
+    // Poll current native anchors before another producer notification.
+    expect(provider.getItems(layer)).toEqual([{ row: 11, end: 11 }]);
+  });
+
+  it("updates only the edited native layer without another reference request", () => {
+    consumerDisposable.dispose();
+    const manager = mainModule.manager;
+    consumerDisposable = mainModule.markerLayer.connect(mainModule.provideFindReferencesMarkers());
+    const background = lumine.workspace.buildTextEditor();
+    background.setText(Array(20).fill("hello world").join("\n"));
+    const overview = makeLayer(background);
+    const native = manager.getOrCreateMarkerLayerForEditor(background);
+    const edited = native.markBufferRange(
+      [
+        [2, 0],
+        [2, 5],
+      ],
+      { invalidate: "inside" },
+    );
+    native.markBufferRange(
+      [
+        [10, 0],
+        [10, 5],
+      ],
+      { invalidate: "inside" },
+    );
+    const request = spyOn(manager, "requestReferencesUnderCursor").and.callThrough();
+    layer.update.calls.reset();
+    overview.update.calls.reset();
+    try {
+      background.getBuffer().insert([2, 2], "x");
+
+      expect(edited.isValid()).toBe(false);
+      expect(overview.update).toHaveBeenCalled();
+      expect(overview.items).toEqual([{ row: 10, end: 10 }]);
+      expect(layer.update).not.toHaveBeenCalled();
+      expect(request).not.toHaveBeenCalled();
+    } finally {
+      overview.disposables.dispose();
+      background.destroy();
+    }
   });
 
   it("takes a fresh layer after the editor's layer detached", () => {
@@ -170,7 +237,7 @@ describe("find-references marker layer", () => {
       [7, 0],
       [7, 5],
     ]);
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(third.update).toHaveBeenCalled();
     expect(third.items).toEqual([{ row: 7, end: 7 }]);
   });
@@ -209,12 +276,12 @@ describe("find-references marker layer", () => {
     layer.update.calls.reset();
 
     // Only the current connection may invalidate, even while both subscribe.
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.update).toHaveBeenCalledTimes(1);
     previous.dispose();
     expect(mainModule.markerLayer.marksService).toBe(service);
     layer.update.calls.reset();
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.update).toHaveBeenCalledTimes(1);
   });
 
@@ -223,14 +290,14 @@ describe("find-references marker layer", () => {
       [7, 0],
       [7, 5],
     ]);
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.items.length).toBe(1);
     layer.update.calls.reset();
     consumerDisposable.dispose();
     expect(layer.update).toHaveBeenCalledTimes(1);
     expect(layer.items).toEqual([]);
     layer.update.calls.reset();
-    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers", editor);
     expect(layer.update).not.toHaveBeenCalled();
     expect(mainModule.markerLayer.marksService).toBeNull();
   });
