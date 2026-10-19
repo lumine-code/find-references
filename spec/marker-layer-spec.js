@@ -122,6 +122,29 @@ describe("find-references marker layer", () => {
     ]);
   });
 
+  it("defers a replacement burst to one read of the current markers at the host poll", () => {
+    const getMarkers = spyOn(service, "getMarkersForEditor").and.callThrough();
+    layer.update.and.stub();
+    const initial = markRanges([
+      [2, 0],
+      [2, 5],
+    ]);
+    service.emitter.emit("did-change-markers");
+    initial.clear();
+    service.emitter.emit("did-change-markers");
+    service.emitter.emit("did-change-markers");
+    expect(layer.update.calls.count()).toBeGreaterThan(0);
+    expect(getMarkers).not.toHaveBeenCalled();
+
+    // The LSP result may replace the marker layer before the host's frame.
+    markRanges([
+      [12, 0],
+      [13, 5],
+    ]);
+    expect(provider.getItems(layer)).toEqual([{ row: 12, end: 13 }]);
+    expect(getMarkers).toHaveBeenCalledTimes(1);
+  });
+
   it("clears the layer when all marks are removed", () => {
     const markerLayer = markRanges([
       [2, 0],
@@ -153,7 +176,7 @@ describe("find-references marker layer", () => {
   });
 
   it("seeds a newly attached layer from existing highlights without a change event", () => {
-    const markerLayer = markRanges([
+    markRanges([
       [7, 0],
       [7, 5],
     ]);
@@ -161,7 +184,6 @@ describe("find-references marker layer", () => {
 
     const attached = makeLayer(editor);
     expect(attached.update).toHaveBeenCalled();
-    expect(attached.cache.get("data")[0]).toBe(markerLayer.getMarkers()[0]);
     expect(attached.items).toEqual([{ row: 7, end: 7 }]);
   });
 
@@ -178,12 +200,35 @@ describe("find-references marker layer", () => {
 
     consumerDisposable = mainModule.markerLayer.connect(replacementService);
     expect(layer.update).toHaveBeenCalled();
-    expect(layer.cache.get("data")[0]).toBe(markerLayer.getMarkers()[0]);
     expect(layer.items).toEqual([{ row: 12, end: 13 }]);
   });
 
-  it("stops updating the layer once the consumer is disposed", () => {
+  it("ignores events and disposal from an older connection to the same facade", () => {
+    const previous = consumerDisposable;
+    consumerDisposable = mainModule.markerLayer.connect(service);
+    layer.update.calls.reset();
+
+    // Only the current connection may invalidate, even while both subscribe.
+    service.emitter.emit("did-change-markers");
+    expect(layer.update).toHaveBeenCalledTimes(1);
+    previous.dispose();
+    expect(mainModule.markerLayer.marksService).toBe(service);
+    layer.update.calls.reset();
+    service.emitter.emit("did-change-markers");
+    expect(layer.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears markers on disconnect and stops responding to the retired service", () => {
+    markRanges([
+      [7, 0],
+      [7, 5],
+    ]);
+    service.emitter.emit("did-change-markers");
+    expect(layer.items.length).toBe(1);
+    layer.update.calls.reset();
     consumerDisposable.dispose();
+    expect(layer.update).toHaveBeenCalledTimes(1);
+    expect(layer.items).toEqual([]);
     layer.update.calls.reset();
     service.emitter.emit("did-change-markers");
     expect(layer.update).not.toHaveBeenCalled();
