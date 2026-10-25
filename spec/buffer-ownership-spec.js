@@ -5,6 +5,11 @@ const { Range, TextBuffer } = require("lumine");
 const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 describe("find-references preview buffer ownership", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let View, editor, directory, temporaryRoot, betaPath, gammaPath, panels, loads, hold;
   const deferred = () => {
     let resolve;

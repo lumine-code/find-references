@@ -262,6 +262,17 @@ module.exports = class ReferencesView {
           buffer.release();
         }
         this.subscriptions.add(
+          editor.onDidChangeGrammar(() => {
+            if (editor === this.editor) {
+              if (editor.getGrammar?.() === lumine.grammars.nullGrammar)
+                this.update({ references: [] });
+              else this.refresh();
+            } else if (this.paths.has(editor.getPath())) {
+              this.replaceBufferCache();
+              this.completeBufferCache();
+              etch.update(this);
+            }
+          }),
           editor.onDidStopChanging(() => {
             const path = editor.getPath();
             if (path && this.paths.has(path)) this.refresh();
@@ -463,7 +474,11 @@ module.exports = class ReferencesView {
     const cache = new Map();
     for (const editor of lumine.workspace.getTextEditors()) {
       const path = editor.getPath();
-      if (path && !cache.has(path)) cache.set(path, editor.getBuffer());
+      if (path && !cache.has(path))
+        cache.set(
+          path,
+          editor.getGrammar?.() === lumine.grammars.nullGrammar ? null : editor.getBuffer(),
+        );
     }
     return cache;
   }
@@ -513,7 +528,9 @@ module.exports = class ReferencesView {
         .getTextEditors()
         .find((editor) => editor.getPath() === filePath);
       const borrowed = open?.getBuffer();
-      if (borrowed && !borrowed.isDestroyed()) {
+      if (open?.getGrammar?.() === lumine.grammars.nullGrammar) {
+        owner.cache.set(filePath, null);
+      } else if (borrowed && !borrowed.isDestroyed()) {
         owner.cache.set(filePath, borrowed);
       } else {
         if (!owner.owned.has(buffer)) {

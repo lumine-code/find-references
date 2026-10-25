@@ -15,6 +15,11 @@ async function microtasks(count = 40) {
 }
 
 describe("find-references", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let mainModule, editor, disposables, delay, tempDir, alphaPath, betaPath;
 
   beforeEach(async () => {
@@ -98,6 +103,37 @@ describe("find-references", () => {
       ],
     };
   }
+
+  it("does not invoke providers or allocate reference markers for None", async () => {
+    const findReferences = jasmine.createSpy("find references").and.returnValue(makeResult());
+    addProvider(findReferences);
+    editor.setGrammar(lumine.grammars.nullGrammar);
+    const allocate = spyOn(editor, "addMarkerLayer").and.callThrough();
+    expect(
+      lumine.commands.canDispatch(editor.getElement(), "find-references:show-panel"),
+    ).toBeFalse();
+    expect(await mainModule.manager.findReferencesAtPosition(editor, [0, 1])).toBeNull();
+    mainModule.manager.highlightReferences(editor, makeResult().references, true);
+    expect(findReferences).not.toHaveBeenCalled();
+    expect(allocate).not.toHaveBeenCalled();
+  });
+
+  it("clears a retained None source and avoids previews of other None files", async () => {
+    const grammar = editor.getGrammar();
+    addProvider(() => makeResult());
+    const other = await lumine.workspace.open(betaPath);
+    other.setGrammar(lumine.grammars.nullGrammar);
+    await mainModule.manager.requestReferencesForPanel({ target: editor.getElement() });
+    const view = lumine.workspace.getPaneItems().find((item) => item instanceof ReferencesView);
+    expect(view.bufferCache.get(betaPath)).toBeNull();
+    expect(view.references.length).toBe(3);
+    editor.setGrammar(lumine.grammars.nullGrammar);
+    await microtasks();
+    expect(view.references).toEqual([]);
+    editor.setGrammar(grammar);
+    await microtasks();
+    expect(view.references.length).toBe(3);
+  });
 
   describe("automatic highlighting", () => {
     it("highlights references after the cursor rests and reports them via find-references.markers", async () => {

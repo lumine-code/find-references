@@ -4,6 +4,11 @@ const path = require("node:path");
 const removeTemporaryDirectory = require("./helpers/temporary-directory");
 
 describe("References for a pending document identity", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let main, editor, preview, scratch, temporary, lease, finish, started;
   beforeEach(async () => {
     jasmine.useRealClock();

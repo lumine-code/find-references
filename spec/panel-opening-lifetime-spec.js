@@ -1,4 +1,9 @@
 describe("Reference panel opening ownership", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let manager, editor, lease, View;
   beforeEach(async () => {
     if (lumine.packages.isPackageLoaded("find-references"))

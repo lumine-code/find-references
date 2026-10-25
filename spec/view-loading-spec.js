@@ -11,6 +11,11 @@ function deferred() {
 }
 
 describe("Find References native results view", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let main, manager, editor, providerLease, directory;
   beforeEach(async () => {
     if (lumine.packages.isPackageLoaded("find-references"))

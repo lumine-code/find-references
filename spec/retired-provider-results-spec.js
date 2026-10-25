@@ -1,4 +1,9 @@
 describe("Reference results after their owner retires", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let main, editor, registration, pending, resolve, reject;
 
   beforeEach(async () => {

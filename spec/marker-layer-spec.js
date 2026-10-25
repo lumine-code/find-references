@@ -1,6 +1,11 @@
 const { CompositeDisposable, Emitter } = require("lumine");
 
 describe("find-references marker layer", () => {
+  // Analysis fixtures use a real grammar; None deliberately disables this package.
+  beforeEach(async () => {
+    await lumine.packages.activatePackage("language-text");
+  });
+
   let editor, mainModule, provider, layer, layers, service, consumerDisposable;
 
   // Minimal stand-in for the layer object a marker host passes to `initialize`
