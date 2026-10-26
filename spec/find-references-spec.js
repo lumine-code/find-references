@@ -666,7 +666,10 @@ describe("find-references", () => {
       const open = spyOn(lumine.workspace, "open").and.callThrough();
 
       expect(await showPanel()).toBe(panel);
-      expect(open).toHaveBeenCalledWith(panel);
+      expect(open.calls.mostRecent().args[0]).toBe(panel);
+      const signal = open.calls.mostRecent().args[1].signal;
+      expect(typeof signal.addEventListener).toBe("function");
+      expect(signal.aborted).toBe(true);
     });
 
     it("filters core ignored names and refreshes the open panel when they change", async () => {
