@@ -28,6 +28,10 @@ Commands available in `lumine-text-editor:not([mini])`:
 - `find-references:highlight`: highlight references to the symbol under the cursor,
 - `find-references:show-panel`: list references to the symbol under the cursor in a results panel.
 
+## Usage
+
+Very long source lines use bounded previews around each reference, with ellipses marking omitted display text. Copy still requests the complete source line; a line beyond the native clipboard string limit is rejected before reading, without truncation.
+
 ## Customization
 
 The highlight can be adjusted in the `styles.css` file, e.g. change the occurrence color:

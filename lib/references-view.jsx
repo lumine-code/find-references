@@ -38,6 +38,8 @@ function getOppositeSplit(split) {
 
 // One reference: the 1-based line number and a preview of the buffer line with
 // the matched segment highlighted.
+const linePreview = require("./line-preview");
+
 class ReferenceRowView {
   constructor(props) {
     this.props = props;
@@ -52,14 +54,17 @@ class ReferenceRowView {
   render() {
     const { reference, filePath, navigationIndex, isSelected, bufferCache } = this.props;
     const { range } = reference;
-    const line = bufferCache.get(filePath)?.lineForRow(range.start.row) ?? "";
-    let before = line;
+    const preview = linePreview(bufferCache.get(filePath), range.start.row, range.start.column);
+    const line = preview.text;
+    let before = preview.prefix + line + preview.suffix;
     let middle = "";
     let after = "";
     if (range.start.row === range.end.row) {
-      before = line.slice(0, range.start.column);
-      middle = line.slice(range.start.column, range.end.column);
-      after = line.slice(range.end.column);
+      const start = Math.max(0, range.start.column - preview.startColumn);
+      const end = Math.max(start, range.end.column - preview.startColumn);
+      before = preview.prefix + line.slice(0, start);
+      middle = line.slice(start, end);
+      after = line.slice(end) + preview.suffix;
     }
     return (
       <li
@@ -635,14 +640,32 @@ module.exports = class ReferencesView {
   }
 
   // Copy the buffer line of the focused reference.
-  copyActiveLine() {
+  async copyActiveLine() {
     const reference = this.indexToReferenceMap.get(this.activeNavigationIndex);
     if (!reference) return;
     const element = this.activeElement;
     if (!element || element.matches(".path-row")) return;
     const buffer = this.bufferCache.get(element.dataset.filePath);
-    const text = buffer?.lineForRow(reference.range.start.row);
-    if (text) lumine.clipboard.write(text);
+    if (!buffer) return;
+    if (!Number.isFinite(buffer.lineLengthForRow(reference.range.start.row))) return;
+    const source = buffer.getTextSnapshotInRange(buffer.rangeForRow(reference.range.start.row));
+    if (!source.length) return;
+    if (!source.canMaterialize()) {
+      lumine.notifications.addError("Unable to copy the reference line", {
+        detail:
+          "This line exceeds the clipboard's JavaScript string limit. Copy a smaller range or save the source to a file.",
+        dismissable: true,
+      });
+      return;
+    }
+    try {
+      await lumine.clipboard.write(source.toString());
+    } catch (error) {
+      lumine.notifications.addError("Unable to copy the reference line", {
+        detail: error.message,
+        dismissable: true,
+      });
+    }
   }
 
   handleClick(event) {
