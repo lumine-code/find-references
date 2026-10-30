@@ -733,6 +733,7 @@ module.exports = class ReferencesView {
       <div
         className={`find-references-pane pane-item${referenceCount === 0 ? " no-results" : ""}`}
         tabIndex={-1}
+        attributes={{ "data-scrollbar-kind": "panel" }}
       >
         <div className="preview-header">
           <span className="preview-count inline-block">
