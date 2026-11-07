@@ -607,7 +607,7 @@ module.exports = class ReferencesView {
     if (index < 0 || this.lastNavigationIndex < 0) return;
     this.activeNavigationIndex = Math.min(index, this.lastNavigationIndex);
     etch.update(this).then(() => {
-      this.activeElement?.scrollIntoViewIfNeeded?.();
+      this.activeElement?.scrollIntoView({ block: "nearest", inline: "nearest" });
     });
   }
 
