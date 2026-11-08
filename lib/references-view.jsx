@@ -592,6 +592,7 @@ module.exports = class ReferencesView {
 
   // Move keyboard focus by `delta` visible results.
   moveBy(delta) {
+    if (this.lastNavigationIndex >= 0) lumine.scrollbars.reveal(this.refs.results);
     let index = this.activeNavigationIndex;
     for (;;) {
       index += delta;
@@ -605,6 +606,7 @@ module.exports = class ReferencesView {
 
   moveTo(index) {
     if (index < 0 || this.lastNavigationIndex < 0) return;
+    lumine.scrollbars.reveal(this.refs.results);
     this.activeNavigationIndex = Math.min(index, this.lastNavigationIndex);
     etch.update(this).then(() => {
       this.activeElement?.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -614,6 +616,7 @@ module.exports = class ReferencesView {
   collapseActive(isCollapsed) {
     const element = this.activeElement;
     if (!element?.matches(".path-row")) return;
+    lumine.scrollbars.reveal(this.refs.results);
     this.setGroupCollapsed(this.activeNavigationIndex, isCollapsed);
   }
 
@@ -748,7 +751,12 @@ module.exports = class ReferencesView {
             Keep results
           </div>
         </div>
-        <div className="results-view focusable-panel" tabIndex={-1} style={this.previewStyle}>
+        <div
+          ref="results"
+          className="results-view focusable-panel"
+          tabIndex={-1}
+          style={this.previewStyle}
+        >
           <ol className="list-tree has-collapsable-children">{groups}</ol>
         </div>
       </div>
