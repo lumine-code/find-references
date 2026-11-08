@@ -731,7 +731,7 @@ module.exports = class ReferencesView {
 
     return (
       <div
-        className={`find-references-pane pane-item${referenceCount === 0 ? " no-results" : ""}`}
+        className={`find-references-pane pane-item tab-content-separated${referenceCount === 0 ? " no-results" : ""}`}
         tabIndex={-1}
         attributes={{ "data-scrollbar-kind": "panel" }}
       >
