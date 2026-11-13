@@ -657,6 +657,40 @@ describe("find-references", () => {
       ).toBe(true);
     });
 
+    it("reveals the results once for each handled boundary command without scrolling", async () => {
+      editor.setCursorBufferPosition([0, 2]);
+      const panel = await showPanel();
+      lumine.commands.dispatch(panel.element, "core:move-down");
+      lumine.commands.dispatch(panel.element, "core:move-down");
+      expect(panel.activeElement.matches(".match-row")).toBeTrue();
+      const index = panel.activeNavigationIndex;
+      const scrollTop = panel.refs.results.scrollTop;
+      const reveal = spyOn(lumine.scrollbars, "reveal");
+
+      for (const command of ["core:move-left", "core:move-right"]) {
+        lumine.commands.dispatch(panel.element, command);
+        expect(panel.activeNavigationIndex).toBe(index);
+        expect(panel.refs.results.scrollTop).toBe(scrollTop);
+      }
+      expect(reveal.calls.allArgs()).toEqual([[panel.refs.results], [panel.refs.results]]);
+
+      reveal.calls.reset();
+      lumine.commands.dispatch(panel.element, "core:move-up");
+      expect(reveal).toHaveBeenCalledOnceWith(panel.refs.results);
+    });
+
+    it("does not signal navigation for rendering, copying, text or unhandled commands", async () => {
+      const panel = await showPanel();
+      const reveal = spyOn(lumine.scrollbars, "reveal");
+      const copy = spyOn(panel, "copyActiveLine").and.resolveTo();
+      await etch.update(panel);
+      lumine.commands.dispatch(panel.element, "core:copy");
+      panel.element.dispatchEvent(new KeyboardEvent("keydown", { key: "q", bubbles: true }));
+      lumine.commands.dispatch(panel.element, "unknown:navigation");
+      expect(copy).toHaveBeenCalledTimes(1);
+      expect(reveal).not.toHaveBeenCalled();
+    });
+
     it("brings a reusable results panel forward through the workspace", async () => {
       editor.setCursorBufferPosition([0, 2]);
       const panel = await showPanel();

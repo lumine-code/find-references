@@ -285,16 +285,18 @@ module.exports = class ReferencesView {
         );
       }),
       lumine.commands.add(this.element, {
-        "core:move-up": () => this.moveBy(-1),
-        "core:move-down": () => this.moveBy(1),
-        "core:move-left": () => this.collapseActive(true),
-        "core:move-right": () => this.collapseActive(false),
-        "core:move-to-top": () => this.moveTo(0),
-        "core:move-to-bottom": () => this.moveTo(this.lastNavigationIndex),
-        "core:confirm": (event) => {
-          event.stopPropagation();
-          this.confirmActive();
-        },
+        ...lumine.scrollbars.navigationCommands(() => this.refs.results, {
+          "core:move-up": () => this.moveBy(-1),
+          "core:move-down": () => this.moveBy(1),
+          "core:move-left": () => this.collapseActive(true),
+          "core:move-right": () => this.collapseActive(false),
+          "core:move-to-top": () => this.moveTo(0),
+          "core:move-to-bottom": () => this.moveTo(this.lastNavigationIndex),
+          "core:confirm": (event) => {
+            event.stopPropagation();
+            this.confirmActive();
+          },
+        }),
         "core:copy": () => this.copyActiveLine(),
       }),
     );
@@ -592,7 +594,6 @@ module.exports = class ReferencesView {
 
   // Move keyboard focus by `delta` visible results.
   moveBy(delta) {
-    if (this.lastNavigationIndex >= 0) lumine.scrollbars.reveal(this.refs.results);
     let index = this.activeNavigationIndex;
     for (;;) {
       index += delta;
@@ -606,7 +607,6 @@ module.exports = class ReferencesView {
 
   moveTo(index) {
     if (index < 0 || this.lastNavigationIndex < 0) return;
-    lumine.scrollbars.reveal(this.refs.results);
     this.activeNavigationIndex = Math.min(index, this.lastNavigationIndex);
     etch.update(this).then(() => {
       this.activeElement?.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -616,7 +616,6 @@ module.exports = class ReferencesView {
   collapseActive(isCollapsed) {
     const element = this.activeElement;
     if (!element?.matches(".path-row")) return;
-    lumine.scrollbars.reveal(this.refs.results);
     this.setGroupCollapsed(this.activeNavigationIndex, isCollapsed);
   }
 
