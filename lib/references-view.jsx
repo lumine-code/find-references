@@ -292,11 +292,11 @@ module.exports = class ReferencesView {
           "core:move-right": () => this.collapseActive(false),
           "core:move-to-top": () => this.moveTo(0),
           "core:move-to-bottom": () => this.moveTo(this.lastNavigationIndex),
-          "core:confirm": (event) => {
-            event.stopPropagation();
-            this.confirmActive();
-          },
         }),
+        "core:confirm": (event) => {
+          event.stopPropagation();
+          this.confirmActive();
+        },
         "core:copy": () => this.copyActiveLine(),
       }),
     );
@@ -632,13 +632,17 @@ module.exports = class ReferencesView {
     const element = this.activeElement;
     if (!element) return;
     if (element.matches(".path-row")) {
-      this.setGroupCollapsed(
-        this.activeNavigationIndex,
-        !this.collapsedIndices.has(this.activeNavigationIndex),
-      );
-      return;
+      return this.toggleGroup(this.activeNavigationIndex);
     }
     this.openReference(element.dataset.filePath, element.dataset.range);
+  }
+
+  toggleGroup(navigationIndex) {
+    const element = this.elementAtIndex(navigationIndex);
+    if (this.destroyed || !element?.matches(".path-row") || !this.refs.results.contains(element))
+      return;
+    lumine.scrollbars.reveal(this.refs.results);
+    return this.setGroupCollapsed(navigationIndex, !this.collapsedIndices.has(navigationIndex));
   }
 
   // Copy the buffer line of the focused reference.
@@ -671,11 +675,14 @@ module.exports = class ReferencesView {
   }
 
   handleClick(event) {
+    if (event.button !== 0 || (process.platform === "darwin" && event.ctrlKey)) return;
     const target = event.target?.closest?.("[data-navigation-index]");
-    if (!target) return;
+    if (this.destroyed || !target || !this.refs.results.contains(target)) return;
     const navigationIndex = Number(target.dataset.navigationIndex);
+    if (!Number.isInteger(navigationIndex) || this.elementAtIndex(navigationIndex) !== target)
+      return;
     if (target.matches(".path-row")) {
-      this.setGroupCollapsed(navigationIndex, !this.collapsedIndices.has(navigationIndex));
+      this.toggleGroup(navigationIndex);
     } else {
       this.openReference(target.dataset.filePath, target.dataset.range);
     }
@@ -687,15 +694,16 @@ module.exports = class ReferencesView {
   // Bring the user to a reference, reusing an existing editor when possible.
   async openReference(filePath, rangeSpec) {
     const references = this.groupedReferences.get(filePath);
-    if (!references) return;
+    if (this.destroyed || !references?.length) return;
     const reference = references.find((ref) => ref.range.toString() === rangeSpec) ?? references[0];
+    const { range } = reference;
+    lumine.scrollbars.reveal(this.refs.results);
     const editor = await lumine.workspace.open(filePath, {
       pending: true,
       searchAllPanes: true,
       split: getOppositeSplit(this.splitDirection),
     });
     if (!lumine.workspace.isTextEditor(editor)) return;
-    const { range } = reference;
     // Reveal the row of the result if it happens to be folded.
     editor.unfoldBufferRow(range.start.row);
     editor.getLastSelection().setBufferRange(range, { flash: true, autoscroll: false });

@@ -691,6 +691,72 @@ describe("find-references", () => {
       expect(reveal).not.toHaveBeenCalled();
     });
 
+    for (const gesture of ["click", "confirm"]) {
+      it(`reports a reference once for ${gesture} using its original target`, async () => {
+        const panel = await showPanel();
+        const row = Array.from(panel.element.querySelectorAll("li.match-row")).find(
+          (candidate) => candidate.dataset.filePath === betaPath,
+        );
+        const position = [panel.refs.results.scrollTop, panel.refs.results.scrollLeft];
+        const open = spyOn(lumine.workspace, "open").and.resolveTo(editor);
+        const reveal = spyOn(lumine.scrollbars, "reveal").and.callFake(() => {
+          panel.activeNavigationIndex = -1;
+          panel.groupedReferences = new Map();
+        });
+        panel.activeNavigationIndex = Number(row.dataset.navigationIndex);
+        if (gesture === "click") row.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        else await lumine.commands.dispatch(panel.element, "core:confirm");
+        await microtasks();
+        expect(reveal).toHaveBeenCalledOnceWith(panel.refs.results);
+        expect(open).toHaveBeenCalledTimes(1);
+        expect(open.calls.mostRecent().args[0]).toBe(betaPath);
+        expect(
+          editor.getSelectedBufferRange().isEqual([
+            [1, 4],
+            [1, 9],
+          ]),
+        ).toBeTrue();
+        expect([panel.refs.results.scrollTop, panel.refs.results.scrollLeft]).toEqual(position);
+      });
+    }
+
+    for (const gesture of ["click", "confirm"]) {
+      it(`reports each group expansion and collapse once for ${gesture}`, async () => {
+        const panel = await showPanel();
+        const header = panel.element.querySelector(".path-row");
+        const index = Number(header.dataset.navigationIndex);
+        panel.activeNavigationIndex = index;
+        const reveal = spyOn(lumine.scrollbars, "reveal");
+        for (const collapsed of [true, false]) {
+          reveal.calls.reset();
+          if (gesture === "click")
+            panel
+              .elementAtIndex(index)
+              .dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          else await lumine.commands.dispatch(panel.element, "core:confirm");
+          await microtasks();
+          expect(panel.collapsedIndices.has(index)).toBe(collapsed);
+          expect(reveal).toHaveBeenCalledOnceWith(panel.refs.results);
+        }
+      });
+    }
+
+    it("ignores empty confirmations, foreign rows, context clicks and pin changes", async () => {
+      const panel = await showPanel();
+      const row = panel.element.querySelector(".match-row");
+      const reveal = spyOn(lumine.scrollbars, "reveal");
+      const open = spyOn(lumine.workspace, "open");
+      panel.activeNavigationIndex = -1;
+      await lumine.commands.dispatch(panel.element, "core:confirm");
+      row.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 2 }));
+      const foreign = row.cloneNode(true);
+      panel.handleClick({ button: 0, target: foreign });
+      panel.togglePinned();
+      await microtasks();
+      expect(reveal).not.toHaveBeenCalled();
+      expect(open).not.toHaveBeenCalled();
+    });
+
     it("brings a reusable results panel forward through the workspace", async () => {
       editor.setCursorBufferPosition([0, 2]);
       const panel = await showPanel();
